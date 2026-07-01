@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🧠 Blueprint Asistanı v4 (YAML şablon + 5-YZ paralel)</title>
+  <style>
+    /* ===== RESET & VARIABLES ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0b0e11;
+      --surface: #161b22;
+      --surface2: #1c2333;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --orange: #d29922;
+      --red: #f85149;
+      --radius: 12px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      min-height: 56px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #a371f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-version {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 2px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.online {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(63, 185, 80, 0.4);
+    }
+
+    .status-dot.offline {
+      background: var(--red);
+    }
+
+    /* ===== CHAT AREA ===== */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-area::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    .chat-area::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 8px;
+    }
+
+    /* ===== MESSAGE BUBBLES ===== */
+    .message {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      line-height: 1.6;
+      word-wrap: break-word;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.yz {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message .meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .message .etiket {
+      font-size: 11px;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+      padding: 1px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(88, 166, 255, 0.2);
+    }
+
+    .message .etiket.karar { background: rgba(63, 185, 80, 0.15); color: var(--green); border-color: rgba(63, 185, 80, 0.2); }
+    .message .etiket.sorun { background: rgba(248, 81, 73, 0.15); color: var(--red); border-color: rgba(248, 81, 73, 0.2); }
+    .message .etiket.ekle { background: rgba(210, 153, 34, 0.15); color: var(--orange); border-color: rgba(210, 153, 34, 0.2); }
+    .message .etiket.arge { background: rgba(163, 113, 247, 0.15); color: #a371f7; border-color: rgba(163, 113, 247, 0.2); }
+
+    /* ===== SYSTEM MESSAGE ===== */
+    .message.system {
+      align-self: center;
+      background: var(--surface2);
+      border: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 95%;
+    }
+
+    /* ===== ONAY BUTONLARI (inline) ===== */
+    .onay-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-onay {
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-onay.evet {
+      background: var(--green);
+      color: #0b0e11;
+    }
+    .btn-onay.evet:hover { opacity: 0.85; }
+
+    .btn-onay.hayir {
+      background: var(--surface2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-onay.hayir:hover { background: var(--border); }
+
+    /* ===== INPUT AREA ===== */
+    .input-area {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-row textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border 0.2s;
+      min-height: 48px;
+      max-height: 120px;
+      line-height: 1.5;
+    }
+
+    .input-row textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .input-row textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-gonder {
+      background: var(--accent);
+      color: #0b0e11;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-gonder:hover {
+      background: var(--accent-hover);
+      transform: scale(1.02);
+    }
+
+    .btn-gonder:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== ETİKET BUTONLARI ===== */
+    .etiket-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .etiket-btn {
+      font-size: 12px;
+      padding: 3px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .etiket-btn:hover {
+      background: var(--surface2);
+      border-color: var(--text-muted);
+    }
+
+    .etiket-btn.aktif {
+      background: rgba(88, 166, 255, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #paralelToggleBtn.aktif {
+      background: rgba(163, 113, 247, 0.18);
+      border-color: #a371f7;
+      color: #a371f7;
+      font-weight: 600;
+    }
+
+    .yz-secim.aktif {
+      background: rgba(63, 185, 80, 0.12);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .header-logo { font-size: 18px; }
+      .header-version { font-size: 10px; }
+      .message { max-width: 95%; font-size: 14px; }
+      .input-row textarea { font-size: 14px; min-height: 40px; }
+      .btn-gonder { padding: 8px 14px; height: 44px; font-size: 14px; }
+      .etiket-btn { font-size: 11px; padding: 2px 10px; }
+    }
+
+    /* ===== LOADING ===== */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== EMOJI PICKER (basit) ===== */
+    .emoji-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-left">
+      <span class="header-logo">🧠 BP</span>
+      <span class="header-version">v5</span>
+    </div>
+    <div class="header-status">
+      <span class="status-dot online" id="statusDot"></span>
+      <span id="statusText" style="font-size:13px; color:var(--text-muted);">Bağlantı Kuruluyor...</span>
+    </div>
+  </header>
+
+  <!-- ===== CHAT ===== -->
+  <div class="chat-area" id="chatArea">
+    <!-- Mesajlar buraya gelecek -->
+  </div>
+
+  <!-- ===== INPUT ===== -->
+  <div class="input-area">
+    <div class="etiket-bar" id="etiketBar">
+      <button class="etiket-btn" data-etiket="#ekle">➕ #ekle</button>
+      <button class="etiket-btn" data-etiket="#sorun">⚠️ #sorun</button>
+      <button class="etiket-btn" data-etiket="#karar">✅ #karar</button>
+      <button class="etiket-btn" data-etiket="#arge">💡 #arge</button>
+      <button class="etiket-btn" data-etiket="#ref">🔗 #ref</button>
+      <button class="etiket-btn" data-etiket="#konu">💬 #konu</button>
+      <button class="etiket-btn" id="paralelToggleBtn" style="margin-left:auto;" title="Bu mesajı 5 YZ'ye birden gönder">🧠×5 Paralel Sor</button>
+    </div>
+
+    <!-- 5-YZ paralel mod açıkken hangi YZ'lerin seçili olduğunu göster -->
+    <div class="etiket-bar" id="yzSecimBar" style="display:none;">
+      <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Hedef YZ'ler:</span>
+      <button class="etiket-btn yz-secim aktif" data-yz="gemini">Gemini</button>
+      <button class="etiket-btn yz-secim aktif" data-yz="groq">Groq</button>
+      <button class="etiket-btn yz-secim aktif" data-yz="deepseek">DeepSeek</button>
+      <button class="etiket-btn yz-secim aktif" data-yz="openrouter">OpenRouter</button>
+      <button class="etiket-btn yz-secim aktif" data-yz="mistral">Mistral</button>
+    </div>
+
+    <div class="input-row">
+      <textarea id="messageInput" rows="1" placeholder="Mesajınızı yazın... (etiket seçin veya yazın)"></textarea>
+      <button class="btn-gonder" id="sendBtn">
+        <span>Gönder</span>
+        <span style="font-size:18px;">📤</span>
+      </button>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); padding:0 4px;">
+      <span id="counterDisplay">🔄 Tur: 0 / 8</span>
+      <span id="oturumDisplay">📋 Oturum: —</span>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // KONFIGÜRASYON
+    // ============================================================
+    const CONFIG = {
+      // ★ BURAYA KENDİ WEB APP URL'İNİ YAZ ★
+      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbypb61LvS7fMvsG8gcf84PLX-FCJn_ioPbrp5oQj4tpi3E5DRh6dPRjNeXrnlZFl_oxtQ/exec",
+
+      // Apps Script'teki Script Properties > ERISIM_SIFRESI ile AYNI olmalı
+      ERISIM_SIFRESI: "blueprint2026",
+
+      // Kaç turda sentez tetiklenecek (Blueprint §6 ile uyumlu)
+      MAX_TUR: 8,
+
+      // true yaparsan her YZ cevabından düşünce zinciri + felsefe de istenir
+      // ve 07_YZ_DNA/yz_dna.jsonl'e kaydedilir. Varsayılan kapalı çünkü
+      // bu modda YZ'nin cevap formatı daha kısıtlı olur (bazı modeller
+      // formatı tam tutturamayabilir — o durumda da cevap kaybolmaz,
+      // ham metin olarak gösterilir).
+      COT_MODU: false,
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let state = {
+      oturumId: null,
+      turSayaci: 0,
+      sohbetGecmisi: [],  // { role, content, etiket? }
+      bekleyenOnay: null, // { onayId, mesaj, karar }
+      aktifEtiket: null,
+      isProcessing: false,
+      // ✅ v4: 5-YZ paralel sorgu modu
+      paralelModAcik: false,
+      seciliYzler: ['gemini', 'groq', 'deepseek', 'openrouter', 'mistral'],
+    };
+
+    // ============================================================
+    // DOM REFS
+    // ============================================================
+    const chatArea = document.getElementById('chatArea');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusText = document.getElementById('statusText');
+    const statusDot = document.getElementById('statusDot');
+    const counterDisplay = document.getElementById('counterDisplay');
+    const oturumDisplay = document.getElementById('oturumDisplay');
+    const etiketBar = document.getElementById('etiketBar');
+    const paralelToggleBtn = document.getElementById('paralelToggleBtn');
+    const yzSecimBar = document.getElementById('yzSecimBar');
+
+    // ============================================================
+    // YARDIMCILAR
+    // ============================================================
+    function uuid() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function formatTarih() {
+      return new Date().toLocaleString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+
+    function etiketleriBul(metin) {
+      const etiketler = ['#ekle', '#sorun', '#karar', '#arge', '#ref', '#konu'];
+      const bulunan = [];
+      for (const e of etiketler) {
+        if (metin.toLowerCase().includes(e)) bulunan.push(e);
+      }
+      return bulunan;
+    }
+
+    function etiketClass(etiket) {
+      const map = {
+        '#karar': 'karar',
+        '#sorun': 'sorun',
+        '#ekle': 'ekle',
+        '#arge': 'arge',
+        '#ref': 'arge',
+        '#konu': 'arge',
+      };
+      return map[etiket] || '';
+    }
+
+    function etiketIcon(etiket) {
+      const map = {
+        '#ekle': '➕',
+        '#sorun': '⚠️',
+        '#karar': '✅',
+        '#arge': '💡',
+        '#ref': '🔗',
+        '#konu': '💬',
+      };
+      return map[etiket] || '🏷️';
+    }
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+    function mesajEkle(icerik, rol, etiketler = [], meta = {}) {
+      const div = document.createElement('div');
+      div.className = `message ${rol}`;
+
+      let etiketHtml = '';
+      if (etiketler.length > 0) {
+        etiketHtml = etiketler.map(e =>
+          `<span class="etiket ${etiketClass(e)}">${etiketIcon(e)} ${e}</span>`
+        ).join(' ');
+      }
+
+      let onayHtml = '';
+      if (rol === 'yz' && etiketler.includes('#ekle') && !meta.onaylandi) {
+        onayHtml = `
+          <div class="onay-container">
+            <button class="btn-onay evet" data-onay="evet">✅ Onayla</button>
+            <button class="btn-onay hayir" data-onay="hayir">❌ Reddet</button>
+          </div>
+        `;
+      }
+
+      div.innerHTML = `
+        <div>${icerik}</div>
+        <div class="meta">
+          <span>${rol === 'user' ? '🧑 Sen' : '🤖 Asistan'}</span>
+          <span>•</span>
+          <span>${meta.tarih || formatTarih()}</span>
+          ${etiketHtml ? `• ${etiketHtml}` : ''}
+        </div>
+        ${onayHtml}
+      `;
+
+      // Onay butonları
+      div.querySelectorAll('.btn-onay').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const karar = this.dataset.onay;
+          // Önceki mesajda onay varsa kaldır
+          const oncekiOnay = chatArea.querySelector('.message .btn-onay');
+          if (oncekiOnay) {
+            oncekiOnay.closest('.message').querySelectorAll('.btn-onay').forEach(b => b.remove());
+          }
+          // Onay bildirimi
+          const onayMesaji = karar === 'evet' ? '✅ Onaylandı' : '❌ Reddedildi';
+          const metaSpan = div.querySelector('.meta');
+          if (metaSpan) {
+            const span = document.createElement('span');
+            span.style.cssText = 'color:' + (karar === 'evet' ? 'var(--green)' : 'var(--red)') + ';font-weight:600;';
+            span.textContent = onayMesaji;
+            metaSpan.appendChild(span);
+          }
+          // Apps Script'e onay gönder
+          if (karar === 'evet') {
+            onayGonder(div, meta);
+          }
+        });
+      });
+
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function sistemMesaji(icerik, tip = 'info') {
+      const div = document.createElement('div');
+      div.className = 'message system';
+      div.textContent = `📌 ${icerik}`;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function setStatus(online, metin) {
+      statusDot.className = `status-dot ${online ? 'online' : 'offline'}`;
+      statusText.textContent = metin;
+    }
+
+    function updateCounter(sayac) {
+      counterDisplay.textContent = `🔄 Tur: ${sayac} / ${CONFIG.MAX_TUR}`;
+    }
+
+    function updateOturum(id) {
+      oturumDisplay.textContent = `📋 Oturum: ${id || '—'}`;
+    }
+
+    // ============================================================
+    // APPS SCRIPT İLETİŞİM
+    // ============================================================
+    async function appScriptIstek(tip, veri = {}) {
+      try {
+        const payload = {
+          tip: tip,
+          sifre: CONFIG.ERISIM_SIFRESI,
+          ...veri,
+          oturum_id: state.oturumId,
+        };
+
+        const response = await fetch(CONFIG.APP_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (error) {
+        console.error('Apps Script hatası:', error);
+        throw error;
+      }
+    }
+
+    // ============================================================
+    // ONAY GÖNDER
+    // ============================================================
+    async function onayGonder(messageDiv, meta) {
+      try {
+        setStatus(true, 'Onay gönderiliyor...');
+        const sonuc = await appScriptIstek('onay', {
+          onay_id: meta.onayId || uuid(),
+          karar: 'evet',
+          mesaj: meta.originalMessage || '',
+        });
+
+        if (sonuc.basarili) {
+          sistemMesaji('✅ Onay işlemi tamamlandı. Değişiklik uygulandı.');
+          // Sayaç güncelle
+          if (sonuc.turSayaci !== undefined) {
+            state.turSayaci = sonuc.turSayaci;
+            updateCounter(state.turSayaci);
+          }
+        } else {
+          sistemMesaji(`❌ Onay hatası: ${sonuc.hata || 'Bilinmeyen'}`);
+        }
+        setStatus(true, 'Bağlı');
+      } catch (e) {
+        sistemMesaji(`❌ Onay gönderilemedi: ${e.message}`);
+        setStatus(false, 'Bağlantı hatası');
+      }
+    }
+
+    // ============================================================
+    // MESAJ GÖNDER
+    // ============================================================
+    async function mesajGonder() {
+      if (state.isProcessing) return;
+
+      const metin = messageInput.value.trim();
+      if (!metin) return;
+
+      // ✅ v4: Paralel mod açıksa farklı akışa git (5 YZ'ye birden sor)
+      if (state.paralelModAcik) {
+        return paralelSorGonder(metin);
+      }
+
+      // Aktif etiketi otomatik ekle (seçili değilse)
+      let etiketler = etiketleriBul(metin);
+      if (state.aktifEtiket && !etiketler.includes(state.aktifEtiket)) {
+        etiketler.push(state.aktifEtiket);
+        // Metnin sonuna etiketi ekle (yoksa)
+        if (!metin.includes(state.aktifEtiket)) {
+          messageInput.value = metin + ' ' + state.aktifEtiket;
+        }
+      }
+
+      // Tekrar etiketleri tazele
+      const sonMetin = messageInput.value.trim();
+      const sonEtiketler = etiketleriBul(sonMetin);
+      const mesaj = sonMetin;
+
+      // UI'ı temizle
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      state.isProcessing = true;
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="loading"></span> Gönderiliyor...';
+
+      // Kullanıcı mesajını göster
+      mesajEkle(mesaj, 'user', sonEtiketler, { tarih: formatTarih() });
+      state.sohbetGecmisi.push({ role: 'user', content: mesaj, etiketler: sonEtiketler });
+
+      try {
+        setStatus(true, 'YZ düşünüyor...');
+
+        // Apps Script'e gönder
+        const sonuc = await appScriptIstek('mesaj', {
+          kullanici_mesaji: mesaj,
+          etiketler: sonEtiketler,
+          sohbet_gecmisi: state.sohbetGecmisi,
+          cot_modu: CONFIG.COT_MODU,
+        });
+
+        // Tur sayacı
+        if (sonuc.turSayaci !== undefined) {
+          state.turSayaci = sonuc.turSayaci;
+          updateCounter(state.turSayaci);
+        }
+
+        // Oturum ID
+        if (sonuc.oturum_id) {
+          state.oturumId = sonuc.oturum_id;
+          updateOturum(state.oturumId);
+        }
+
+        // YZ cevabı
+        if (sonuc.yz_cevabi) {
+          const yzEtiketler = etiketleriBul(sonuc.yz_cevabi);
+          mesajEkle(sonuc.yz_cevabi, 'yz', yzEtiketler, {
+            tarih: formatTarih(),
+            onaylandi: sonuc.onaylandi || false,
+            originalMessage: mesaj,
+            onayId: sonuc.onay_id,
+          });
+          state.sohbetGecmisi.push({ role: 'assistant', content: sonuc.yz_cevabi });
+          if (CONFIG.COT_MODU && sonuc.cot_kaydedildi) {
+            sistemMesaji('🧬 Düşünce zinciri + felsefe 07_YZ_DNA/yz_dna.jsonl\'e kaydedildi.');
+          }
+        }
+
+        // Sentez tetiklendiyse
+        if (sonuc.sentezGerekli) {
+          sistemMesaji('🔄 8. tur tamamlandı. Sentez yapılıyor...');
+          const sentezSonuc = await appScriptIstek('sentez', {
+            sohbet_gecmisi: state.sohbetGecmisi,
+          });
+          if (sentezSonuc.basarili) {
+            sistemMesaji('✅ Sentez tamamlandı ve Drive\'a YAML olarak kaydedildi (03_SENTEZ/sentez_guncel.md).');
+            if (sentezSonuc.parse_basarili === false) {
+              sistemMesaji('⚠️ YZ\'nin cevabı tam YAML formatında gelmedi — ham metin yedek olarak saklandı, veri kaybolmadı.');
+            }
+            // ✅ v4: Apps Script "sayfa_yenilensin" sinyali verdiyse, tarayıcı
+            // sekmesini tamamen yeniler. Bu, kullanıcının istediği "temiz
+            // pencere" davranışıdır: tüm JS state sıfırlanır, sayfa yeniden
+            // yüklendiğinde init() yeniden çalışır, oturumBaslat() Drive'daki
+            // GÜNCEL sentezi/blueprint'i/kararları en baştan okur.
+            if (sentezSonuc.sayfa_yenilensin) {
+              sistemMesaji('🔁 Pencere 3 saniye içinde yenilenecek — yeni oturum Drive\'dan temiz okunacak...');
+              setTimeout(function () { window.location.reload(); }, 3000);
+              return; // reload gelecek, devam etmeye gerek yok
+            }
+            state.turSayaci = 0;
+            updateCounter(state.turSayaci);
+          } else {
+            sistemMesaji(`❌ Sentez hatası: ${sentezSonuc.hata || 'Bilinmeyen'}`);
+          }
+        }
+
+        setStatus(true, 'Bağlı');
+      } catch (error) {
+        console.error(error);
+        sistemMesaji(`❌ Hata: ${error.message}`);
+        setStatus(false, 'Bağlantı hatası');
+        // Cevap gelmedi, kullanıcıya göster
+        mesajEkle('Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.', 'yz', [], { tarih: formatTarih() });
+      } finally {
+        state.isProcessing = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = state.paralelModAcik
+          ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>'
+          : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
+        messageInput.focus();
+      }
+    }
+
+    // ============================================================
+    // ✅ v4: 5-YZ PARALEL SORGU (paralel mod açıkken kullanılır)
+    // ============================================================
+    async function paralelSorGonder(mesaj) {
+      if (state.seciliYzler.length === 0) {
+        sistemMesaji('⚠️ En az bir YZ seçmelisin.');
+        return;
+      }
+
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      state.isProcessing = true;
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="loading"></span> 5 YZ\'ye soruluyor...';
+
+      mesajEkle(mesaj, 'user', [], { tarih: formatTarih() });
+      state.sohbetGecmisi.push({ role: 'user', content: mesaj });
+
+      try {
+        setStatus(true, `${state.seciliYzler.length} YZ paralel düşünüyor...`);
+
+        const sonuc = await appScriptIstek('yz_sor', {
+          soru: mesaj,
+          hedefYzler: state.seciliYzler,
+        });
+
+        if (sonuc.basarili && sonuc.sonuclar) {
+          // Her YZ'nin cevabını ayrı bir balon olarak göster
+          sonuc.sonuclar.forEach(function (r) {
+            if (r.basarili) {
+              mesajEkle(`<strong style="color:#a371f7;">[${r.yz.toUpperCase()}]</strong><br>${r.cevap}`, 'yz', [], { tarih: formatTarih() });
+              state.sohbetGecmisi.push({ role: 'assistant', content: '[' + r.yz + '] ' + r.cevap });
+            } else {
+              mesajEkle(`<strong style="color:var(--red);">[${r.yz.toUpperCase()} HATA]</strong><br>${r.hata}`, 'yz', [], { tarih: formatTarih() });
+            }
+          });
+          sistemMesaji('🧠 5 YZ paralel cevabı tamamlandı. (Bu turlar normal 8-tur sayacına dahil değildir.)');
+        } else {
+          sistemMesaji(`❌ Paralel sorgu hatası: ${sonuc.hata || 'Bilinmeyen'}`);
+        }
+        setStatus(true, 'Bağlı');
+      } catch (error) {
+        console.error(error);
+        sistemMesaji(`❌ Hata: ${error.message}`);
+        setStatus(false, 'Bağlantı hatası');
+      } finally {
+        state.isProcessing = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>';
+        messageInput.focus();
+      }
+    }
+
+    // ============================================================
+    // OTURUM BAŞLAT
+    // ============================================================
+    async function oturumBaslat() {
+      try {
+        sistemMesaji('🔄 Oturum başlatılıyor... Drive dosyaları okunuyor.');
+        setStatus(true, 'Oturum açılıyor...');
+
+        const sonuc = await appScriptIstek('oturum_basla', {});
+        if (sonuc.oturum_id) {
+          state.oturumId = sonuc.oturum_id;
+          updateOturum(state.oturumId);
+          state.turSayaci = 0;
+          updateCounter(state.turSayaci);
+          sistemMesaji(`✅ Oturum başlatıldı: ${state.oturumId}`);
+          setStatus(true, 'Bağlı');
+
+          // ✅ v3: Önceki oturumun sohbet özeti varsa kullanıcıya bildir.
+          // Not: bu YZ'nin "hatırlaması" değil — Drive'dan okunan bir
+          // dosya. YZ her çağrıda sıfırdan başlar, sadece bu metni okur.
+          if (sonuc.baglam && sonuc.baglam.onceki_sohbet) {
+            sistemMesaji('📖 Önceki oturumun sohbet geçmişi Drive\'dan okundu ve bağlama eklendi.');
+          }
+
+          // Varsa YZ'nin ilk mesajını göster
+          if (sonuc.yz_cevabi) {
+            mesajEkle(sonuc.yz_cevabi, 'yz', [], { tarih: formatTarih() });
+          }
+        } else {
+          sistemMesaji(`❌ Oturum başlatılamadı: ${sonuc.hata || 'Bilinmeyen'}`);
+          setStatus(false, 'Hata');
+        }
+      } catch (error) {
+        sistemMesaji(`❌ Oturum hatası: ${error.message}`);
+        setStatus(false, 'Bağlantı hatası');
+      }
+    }
+
+    // ============================================================
+    // EVENT LISTENER'LAR
+    // ============================================================
+
+    // Etiket butonları
+    etiketBar.addEventListener('click', function(e) {
+      const btn = e.target.closest('.etiket-btn');
+      if (!btn || btn === paralelToggleBtn) return;
+      const etiket = btn.dataset.etiket;
+
+      // Aktif etiketi değiştir
+      document.querySelectorAll('.etiket-btn[data-etiket]').forEach(b => b.classList.remove('aktif'));
+      if (state.aktifEtiket === etiket) {
+        state.aktifEtiket = null;
+      } else {
+        btn.classList.add('aktif');
+        state.aktifEtiket = etiket;
+
+        // Input'a etiketi ekle
+        const mevcut = messageInput.value.trim();
+        if (!mevcut.includes(etiket)) {
+          messageInput.value = mevcut + (mevcut ? ' ' : '') + etiket;
+        }
+        messageInput.focus();
+      }
+    });
+
+    // ✅ v4: 5-YZ paralel sorgu modu aç/kapa
+    paralelToggleBtn.addEventListener('click', function () {
+      state.paralelModAcik = !state.paralelModAcik;
+      paralelToggleBtn.classList.toggle('aktif', state.paralelModAcik);
+      yzSecimBar.style.display = state.paralelModAcik ? 'flex' : 'none';
+      sendBtn.innerHTML = state.paralelModAcik
+        ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>'
+        : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
+    });
+
+    // ✅ v4: Paralel modda hangi YZ'lerin hedefleneceğini seç
+    yzSecimBar.addEventListener('click', function (e) {
+      const btn = e.target.closest('.yz-secim');
+      if (!btn) return;
+      const yz = btn.dataset.yz;
+      btn.classList.toggle('aktif');
+      if (btn.classList.contains('aktif')) {
+        if (!state.seciliYzler.includes(yz)) state.seciliYzler.push(yz);
+      } else {
+        state.seciliYzler = state.seciliYzler.filter(function (y) { return y !== yz; });
+      }
+    });
+
+    // Gönder butonu
+    sendBtn.addEventListener('click', mesajGonder);
+
+    // Enter ile gönder (Shift+Enter = yeni satır)
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        mesajGonder();
+      }
+    });
+
+    // Otomatik yükseklik
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // ============================================================
+    // BAŞLAT
+    // ============================================================
+    async function init() {
+      // Önce oturumu başlat
+      await oturumBaslat();
+
+      // Hoş geldin mesajı
+      setTimeout(() => {
+        if (chatArea.children.length === 0) {
+          sistemMesaji('👋 Hoş geldin! Blueprint geliştirme asistanı aktif. Bir şeyler yazmaya başla. (İstersen "🧠×5 Paralel Sor" ile tek soruyu 5 YZ\'ye birden sorabilirsin.)');
+        }
+      }, 500);
+    }
+
+    // DOM yüklendikten sonra başlat
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
