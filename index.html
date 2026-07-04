@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🧠 Blueprint Asistanı v4 (YAML şablon + 5-YZ paralel)</title>
+  <title>🧠 Blueprint Asistanı v5</title>
   <style>
     /* ===== RESET & VARIABLES ===== */
     * {
@@ -38,7 +38,6 @@
       overflow: hidden;
     }
 
-    /* ===== HEADER ===== */
     .header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -96,7 +95,6 @@
       background: var(--red);
     }
 
-    /* ===== CHAT AREA ===== */
     .chat-area {
       flex: 1;
       overflow-y: auto;
@@ -120,7 +118,6 @@
       border-radius: 8px;
     }
 
-    /* ===== MESSAGE BUBBLES ===== */
     .message {
       max-width: 88%;
       padding: 10px 14px;
@@ -141,6 +138,7 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-bottom-right-radius: 4px;
+      border-left: 3px solid #58a6ff; 
     }
 
     .message.yz {
@@ -148,6 +146,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-bottom-left-radius: 4px;
+      border-left: 3px solid #3fb950;  
     }
 
     .message .meta {
@@ -174,7 +173,6 @@
     .message .etiket.ekle { background: rgba(210, 153, 34, 0.15); color: var(--orange); border-color: rgba(210, 153, 34, 0.2); }
     .message .etiket.arge { background: rgba(163, 113, 247, 0.15); color: #a371f7; border-color: rgba(163, 113, 247, 0.2); }
 
-    /* ===== SYSTEM MESSAGE ===== */
     .message.system {
       align-self: center;
       background: var(--surface2);
@@ -185,7 +183,6 @@
       max-width: 95%;
     }
 
-    /* ===== ONAY BUTONLARI (inline) ===== */
     .onay-container {
       display: flex;
       gap: 10px;
@@ -203,20 +200,11 @@
       transition: 0.2s;
     }
 
-    .btn-onay.evet {
-      background: var(--green);
-      color: #0b0e11;
-    }
+    .btn-onay.evet { background: var(--green); color: #0b0e11; }
     .btn-onay.evet:hover { opacity: 0.85; }
-
-    .btn-onay.hayir {
-      background: var(--surface2);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
+    .btn-onay.hayir { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
     .btn-onay.hayir:hover { background: var(--border); }
 
-    /* ===== INPUT AREA ===== */
     .input-area {
       background: var(--surface);
       border-top: 1px solid var(--border);
@@ -227,11 +215,7 @@
       flex-shrink: 0;
     }
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-    }
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
 
     .input-row textarea {
       flex: 1;
@@ -250,13 +234,8 @@
       line-height: 1.5;
     }
 
-    .input-row textarea:focus {
-      border-color: var(--accent);
-    }
-
-    .input-row textarea::placeholder {
-      color: var(--text-muted);
-    }
+    .input-row textarea:focus { border-color: var(--accent); }
+    .input-row textarea::placeholder { color: var(--text-muted); }
 
     .btn-gonder {
       background: var(--accent);
@@ -275,23 +254,10 @@
       gap: 6px;
     }
 
-    .btn-gonder:hover {
-      background: var(--accent-hover);
-      transform: scale(1.02);
-    }
+    .btn-gonder:hover { background: var(--accent-hover); transform: scale(1.02); }
+    .btn-gonder:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    .btn-gonder:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* ===== ETİKET BUTONLARI ===== */
-    .etiket-bar {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
+    .etiket-bar { display: flex; gap: 6px; flex-wrap: wrap; }
 
     .etiket-btn {
       font-size: 12px;
@@ -304,31 +270,16 @@
       transition: 0.2s;
     }
 
-    .etiket-btn:hover {
-      background: var(--surface2);
-      border-color: var(--text-muted);
-    }
+    .etiket-btn:hover { background: var(--surface2); border-color: var(--text-muted); }
+    .etiket-btn.aktif { background: rgba(88, 166, 255, 0.15); border-color: var(--accent); color: var(--accent); }
 
-    .etiket-btn.aktif {
-      background: rgba(88, 166, 255, 0.15);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    #paralelToggleBtn.aktif { background: rgba(163, 113, 247, 0.18); border-color: #a371f7; color: #a371f7; font-weight: 600; }
+    .yz-secim.aktif { background: rgba(63, 185, 80, 0.12); border-color: var(--green); color: var(--green); }
 
-    #paralelToggleBtn.aktif {
-      background: rgba(163, 113, 247, 0.18);
-      border-color: #a371f7;
-      color: #a371f7;
-      font-weight: 600;
-    }
+    #baglantiTestPaneli { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 8px 16px; font-size: 13px; display: none; }
+    #baglantiTestSonuclari { display: flex; flex-wrap: wrap; gap: 8px; }
+    #baglantiTestSonuclari span { padding: 3px 10px; border-radius: 6px; font-size: 12px; }
 
-    .yz-secim.aktif {
-      background: rgba(63, 185, 80, 0.12);
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 600px) {
       .header-logo { font-size: 18px; }
       .header-version { font-size: 10px; }
@@ -338,7 +289,6 @@
       .etiket-btn { font-size: 11px; padding: 2px 10px; }
     }
 
-    /* ===== LOADING ===== */
     .loading {
       display: inline-block;
       width: 16px;
@@ -349,38 +299,95 @@
       animation: spin 0.7s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ===== EMOJI PICKER (basit) ===== */
-    .emoji-hint {
-      font-size: 13px;
-      color: var(--text-muted);
-      padding: 0 4px;
+    .yz-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+    .yz-badge.gemini { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+    .yz-badge.groq { background: rgba(163, 113, 247, 0.15); color: #a371f7; }
+    .yz-badge.deepseek { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .yz-badge.openrouter { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .yz-badge.mistral { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+    .yz-badge.ozel { background: rgba(163, 113, 247, 0.15); color: #a371f7; }
+    .yz-badge.otomatik { background: rgba(139, 148, 158, 0.15); color: #8b949e; }
+
+    .yz-gecis-uyarisi {
+      font-size: 11px;
+      color: #f85149;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      background: rgba(248, 81, 73, 0.08);
+      border-radius: 6px;
+      border: 1px solid rgba(248, 81, 73, 0.2);
     }
   </style>
 </head>
 <body>
 
-  <!-- ===== HEADER ===== -->
   <header class="header">
     <div class="header-left">
       <span class="header-logo">🧠 BP</span>
-      <span class="header-version">v5</span>
+      <span class="header-version">v6</span>
     </div>
     <div class="header-status">
+      <button id="baglantiTestBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🔗 Bağlantı Test</button>
+      <button id="konularBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📋 ARGE / ÖZEL</button>
+      <button id="dashboardBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📊 Dashboard</button>
+      <button id="acilisRaporuBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📋 Açılış Raporu</button>
+      <button id="driveDenetleBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🗂️ Drive Yapısını Denetle</button>
       <span class="status-dot online" id="statusDot"></span>
       <span id="statusText" style="font-size:13px; color:var(--text-muted);">Bağlantı Kuruluyor...</span>
     </div>
   </header>
 
-  <!-- ===== CHAT ===== -->
-  <div class="chat-area" id="chatArea">
-    <!-- Mesajlar buraya gelecek -->
+  <div id="driveDenetlePanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:998; align-items:center; justify-content:center;">
+    <div style="background:#1c2333; border:1px solid #30363d; border-radius:14px; width:min(560px,94vw); max-height:85vh; display:flex; flex-direction:column; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #30363d;">
+        <strong style="font-size:14px;">🗂️ Drive Klasör/Dosya Yapısı Denetimi</strong>
+        <button id="driveDenetleKapatBtn" style="background:none; border:none; color:#8b949e; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div id="driveDenetleIcerik" style="overflow-y:auto; padding:14px 18px; flex:1; font-size:13px; line-height:1.8;"></div>
+    </div>
   </div>
 
-  <!-- ===== INPUT ===== -->
+  <div id="baglantiTestPaneli">
+    <div id="baglantiTestSonuclari"></div>
+  </div>
+
+  <div id="acilisRaporuModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:998; align-items:center; justify-content:center;">
+    <div style="background:#1c2333; border:1px solid #30363d; border-radius:14px; width:min(580px,94vw); max-height:85vh; display:flex; flex-direction:column; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #30363d;">
+        <strong style="font-size:15px;">📋 Son Durum Raporu</strong>
+        <button id="acilisRaporuKapatBtn" style="background:none; border:none; color:#8b949e; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div id="acilisRaporuIcerik" style="overflow-y:auto; padding:14px 18px; flex:1; font-size:13px; line-height:1.7;"></div>
+      <div style="padding:10px 18px; border-top:1px solid #30363d; display:flex; justify-content:flex-end; gap:8px;">
+        <button id="acilisRaporuKapatBtn2" style="padding:7px 18px; border-radius:7px; border:1px solid #30363d; background:transparent; color:#8b949e; cursor:pointer;">Kapat</button>
+        <button id="acilisRaporuDevamBtn" style="padding:7px 18px; border-radius:7px; border:none; background:#58a6ff; color:#0b0e11; font-weight:600; cursor:pointer;">Devam Et →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboardModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:997; align-items:center; justify-content:center;">
+    <div style="background:#1c2333; border:1px solid #30363d; border-radius:14px; width:min(500px,94vw); max-height:80vh; display:flex; flex-direction:column; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #30363d;">
+        <strong style="font-size:15px;">📊 Oturum Dashboard'u</strong>
+        <button id="dashboardKapatBtn" style="background:none; border:none; color:#8b949e; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div id="dashboardIcerik" style="overflow-y:auto; padding:14px 18px; flex:1; font-size:13px; line-height:1.7;"></div>
+    </div>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
   <div class="input-area">
     <div class="etiket-bar" id="etiketBar">
       <button class="etiket-btn" data-etiket="#ekle">➕ #ekle</button>
@@ -392,9 +399,8 @@
       <button class="etiket-btn" id="paralelToggleBtn" style="margin-left:auto;" title="Bu mesajı 5 YZ'ye birden gönder">🧠×5 Paralel Sor</button>
     </div>
 
-    <!-- 5-YZ paralel mod açıkken hangi YZ'lerin seçili olduğunu göster -->
     <div class="etiket-bar" id="yzSecimBar" style="display:none;">
-      <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Hedef YZ'ler:</span>
+      <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Hedef YZ'ler (tık: tek seç · CTRL+tık: çoklu seç):</span>
       <button class="etiket-btn yz-secim aktif" data-yz="gemini">Gemini</button>
       <button class="etiket-btn yz-secim aktif" data-yz="groq">Groq</button>
       <button class="etiket-btn yz-secim aktif" data-yz="deepseek">DeepSeek</button>
@@ -402,7 +408,42 @@
       <button class="etiket-btn yz-secim aktif" data-yz="mistral">Mistral</button>
     </div>
 
+    <div id="driveSeciliDosyalar" style="display:none; padding:6px 16px; flex-wrap:wrap; gap:6px; font-size:12px;"></div>
+
+    <div id="drivePanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:var(--bg-primary,#111); border:1px solid var(--border,#333); border-radius:12px; width:min(560px,92vw); max-height:80vh; display:flex; flex-direction:column; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border,#333);">
+          <strong id="drivePanelBaslik" style="font-size:14px;">📁 Drive'dan Dosya Seç</strong>
+          <button id="drivePanelKapatBtn" style="background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;">✕</button>
+        </div>
+        <div id="drivePanelIcerik" style="overflow-y:auto; padding:8px 16px; flex:1;">
+          <div style="color:var(--text-muted); font-size:13px;">🔄 Yükleniyor...</div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; padding:10px 16px; border-top:1px solid var(--border,#333);">
+          <button id="driveEkleBtn" style="padding:6px 14px; border-radius:8px; border:none; background:var(--accent,#3b82f6); color:#fff; cursor:pointer;">Seçilenleri Ekle</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="konularPanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:var(--bg-primary,#111); border:1px solid var(--border,#333); border-radius:12px; width:min(600px,92vw); max-height:82vh; display:flex; flex-direction:column; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border,#333);">
+          <strong style="font-size:14px;">📋 ARGE / ÖZEL Konuları</strong>
+          <button id="konularPanelKapatBtn" style="background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;">✕</button>
+        </div>
+        <div style="display:flex; gap:6px; padding:8px 16px; border-bottom:1px solid var(--border,#333);">
+          <button class="etiket-btn konu-filtre aktif" data-tip="">Tümü</button>
+          <button class="etiket-btn konu-filtre" data-tip="arge">💡 ARGE</button>
+          <button class="etiket-btn konu-filtre" data-tip="ozel">🔒 ÖZEL</button>
+        </div>
+        <div id="konularPanelIcerik" style="overflow-y:auto; padding:8px 16px; flex:1;">
+          <div style="color:var(--text-muted); font-size:13px;">🔄 Yükleniyor...</div>
+        </div>
+      </div>
+    </div>
+
     <div class="input-row">
+      <button id="driveSecBtn" title="Drive'dan dosya seç (yükleme değil)" style="border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer; padding:0 12px;">📁</button>
       <textarea id="messageInput" rows="1" placeholder="Mesajınızı yazın... (etiket seçin veya yazın)"></textarea>
       <button class="btn-gonder" id="sendBtn">
         <span>Gönder</span>
@@ -421,20 +462,9 @@
     // KONFIGÜRASYON
     // ============================================================
     const CONFIG = {
-      // ★ BURAYA KENDİ WEB APP URL'İNİ YAZ ★
-      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbypb61LvS7fMvsG8gcf84PLX-FCJn_ioPbrp5oQj4tpi3E5DRh6dPRjNeXrnlZFl_oxtQ/exec",
-
-      // Apps Script'teki Script Properties > ERISIM_SIFRESI ile AYNI olmalı
+      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzy_kKJypVCSmwNLwdxmOq_02em4Teo98NBRm5AYXKoukUIp7LIgeuTYvE44twYPJba/exec", 
       ERISIM_SIFRESI: "blueprint2026",
-
-      // Kaç turda sentez tetiklenecek (Blueprint §6 ile uyumlu)
       MAX_TUR: 8,
-
-      // true yaparsan her YZ cevabından düşünce zinciri + felsefe de istenir
-      // ve 07_YZ_DNA/yz_dna.jsonl'e kaydedilir. Varsayılan kapalı çünkü
-      // bu modda YZ'nin cevap formatı daha kısıtlı olur (bazı modeller
-      // formatı tam tutturamayabilir — o durumda da cevap kaybolmaz,
-      // ham metin olarak gösterilir).
       COT_MODU: false,
     };
 
@@ -444,13 +474,15 @@
     let state = {
       oturumId: null,
       turSayaci: 0,
-      sohbetGecmisi: [],  // { role, content, etiket? }
-      bekleyenOnay: null, // { onayId, mesaj, karar }
+      sohbetGecmisi: [],
       aktifEtiket: null,
       isProcessing: false,
-      // ✅ v4: 5-YZ paralel sorgu modu
       paralelModAcik: false,
       seciliYzler: ['gemini', 'groq', 'deepseek', 'openrouter', 'mistral'],
+      driveSeciliDosyalar: [],
+      driveGezinmeYigin: [null],
+      aktifKonuId: null,
+      mesajNo: 0, 
     };
 
     // ============================================================
@@ -466,6 +498,20 @@
     const etiketBar = document.getElementById('etiketBar');
     const paralelToggleBtn = document.getElementById('paralelToggleBtn');
     const yzSecimBar = document.getElementById('yzSecimBar');
+    const driveSecBtn = document.getElementById('driveSecBtn');
+    const drivePanel = document.getElementById('drivePanel');
+    const drivePanelIcerik = document.getElementById('drivePanelIcerik');
+    const drivePanelBaslik = document.getElementById('drivePanelBaslik');
+    const drivePanelKapatBtn = document.getElementById('drivePanelKapatBtn');
+    const driveEkleBtn = document.getElementById('driveEkleBtn');
+    const driveSeciliDosyalarDiv = document.getElementById('driveSeciliDosyalar');
+    const konularBtn = document.getElementById('konularBtn');
+    const konularPanel = document.getElementById('konularPanel');
+    const konularPanelIcerik = document.getElementById('konularPanelIcerik');
+    const konularPanelKapatBtn = document.getElementById('konularPanelKapatBtn');
+    const baglantiTestBtn = document.getElementById('baglantiTestBtn');
+    const baglantiTestPaneli = document.getElementById('baglantiTestPaneli');
+    const baglantiTestSonuclari = document.getElementById('baglantiTestSonuclari');
 
     // ============================================================
     // YARDIMCILAR
@@ -480,11 +526,7 @@
 
     function formatTarih() {
       return new Date().toLocaleString('tr-TR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+        hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
       });
     }
 
@@ -498,41 +540,53 @@
     }
 
     function etiketClass(etiket) {
-      const map = {
-        '#karar': 'karar',
-        '#sorun': 'sorun',
-        '#ekle': 'ekle',
-        '#arge': 'arge',
-        '#ref': 'arge',
-        '#konu': 'arge',
-      };
+      const map = { '#karar': 'karar', '#sorun': 'sorun', '#ekle': 'ekle', '#arge': 'arge', '#ref': 'arge', '#konu': 'arge' };
       return map[etiket] || '';
     }
 
     function etiketIcon(etiket) {
-      const map = {
-        '#ekle': '➕',
-        '#sorun': '⚠️',
-        '#karar': '✅',
-        '#arge': '💡',
-        '#ref': '🔗',
-        '#konu': '💬',
-      };
+      const map = { '#ekle': '➕', '#sorun': '⚠️', '#karar': '✅', '#arge': '💡', '#ref': '🔗', '#konu': '💬' };
       return map[etiket] || '🏷️';
+    }
+
+    function setStatus(online, metin) {
+      statusDot.className = 'status-dot ' + (online ? 'online' : 'offline');
+      statusText.textContent = metin;
+    }
+
+    function updateCounter(sayac) {
+      counterDisplay.textContent = '🔄 Tur: ' + sayac + ' / ' + CONFIG.MAX_TUR;
+    }
+
+    function updateOturum(id) {
+      oturumDisplay.textContent = '📋 Oturum: ' + (id || '—');
     }
 
     // ============================================================
     // RENDER
     // ============================================================
-    function mesajEkle(icerik, rol, etiketler = [], meta = {}) {
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function mesajEkle(icerik, rol, etiketler, meta) {
+      etiketler = etiketler || [];
+      meta = meta || {};
       const div = document.createElement('div');
-      div.className = `message ${rol}`;
+      div.className = 'message ' + rol;
 
       let etiketHtml = '';
       if (etiketler.length > 0) {
-        etiketHtml = etiketler.map(e =>
-          `<span class="etiket ${etiketClass(e)}">${etiketIcon(e)} ${e}</span>`
-        ).join(' ');
+        etiketHtml = etiketler.map(function(e) {
+          return '<span class="etiket ' + etiketClass(e) + '">' + etiketIcon(e) + ' ' + e + '</span>';
+        }).join(' ');
       }
 
       let onayHtml = '';
@@ -545,28 +599,52 @@
         `;
       }
 
+      let yzBadgeHtml = '';
+      if (rol === 'yz' && meta.yz_adi) {
+        var yzClass = meta.yz_kodu || 'otomatik';
+        var gecisUyarisi = '';
+        if (meta.yz_otomatik_gecis) {
+          gecisUyarisi = '<div class="yz-gecis-uyarisi">⚠️ ' + meta.yz_otomatik_gecis + '</div>';
+        }
+        yzBadgeHtml = gecisUyarisi + '<div class="yz-badge ' + yzClass + '">🤖 ' + meta.yz_adi + '</div>';
+      }
+
+      let ozelHtml = '';
+      if (meta.ozel_kanal) {
+        ozelHtml = '<span class="etiket" style="background:rgba(163,113,247,0.2);color:#a371f7;">🔒 ÖZEL (kaydedilmiyor)</span>';
+      }
+
+      let dosyaHtml = '';
+      if (meta.driveDosyalari && meta.driveDosyalari.length) {
+        dosyaHtml = '<span class="etiket" style="background:rgba(59,130,246,0.15);color:#93c5fd;">📎 ' + meta.driveDosyalari.join(', ') + '</span>';
+      }
+
+      let numaraEtiketi = '';
+      if (meta.mesajNo) {
+        numaraEtiketi = (rol === 'user' ? 'Soru #' : 'Cevap #') + meta.mesajNo;
+      }
+
+      const icerikGuvenli = escapeHtml(icerik).replace(/\n/g, '<br>');
+
       div.innerHTML = `
-        <div>${icerik}</div>
+        ${yzBadgeHtml}
+        <div>${icerikGuvenli}</div>
         <div class="meta">
-          <span>${rol === 'user' ? '🧑 Sen' : '🤖 Asistan'}</span>
+          <span>${rol === 'user' ? '🧑 Sen' : (meta.yz_adi || '🤖 Asistan')}</span>
+          ${numaraEtiketi ? '<span>•</span><span>' + numaraEtiketi + '</span>' : ''}
           <span>•</span>
           <span>${meta.tarih || formatTarih()}</span>
-          ${etiketHtml ? `• ${etiketHtml}` : ''}
+          ${etiketHtml ? '• ' + etiketHtml : ''}
+          ${ozelHtml ? '• ' + ozelHtml : ''}
+          ${dosyaHtml ? '• ' + dosyaHtml : ''}
         </div>
         ${onayHtml}
       `;
 
-      // Onay butonları
-      div.querySelectorAll('.btn-onay').forEach(btn => {
+      div.querySelectorAll('.btn-onay').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           const karar = this.dataset.onay;
-          // Önceki mesajda onay varsa kaldır
-          const oncekiOnay = chatArea.querySelector('.message .btn-onay');
-          if (oncekiOnay) {
-            oncekiOnay.closest('.message').querySelectorAll('.btn-onay').forEach(b => b.remove());
-          }
-          // Onay bildirimi
           const onayMesaji = karar === 'evet' ? '✅ Onaylandı' : '❌ Reddedildi';
           const metaSpan = div.querySelector('.meta');
           if (metaSpan) {
@@ -575,7 +653,6 @@
             span.textContent = onayMesaji;
             metaSpan.appendChild(span);
           }
-          // Apps Script'e onay gönder
           if (karar === 'evet') {
             onayGonder(div, meta);
           }
@@ -586,54 +663,484 @@
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
-    function sistemMesaji(icerik, tip = 'info') {
+    function sistemMesaji(icerik) {
       const div = document.createElement('div');
       div.className = 'message system';
-      div.textContent = `📌 ${icerik}`;
+      div.textContent = '📌 ' + icerik;
       chatArea.appendChild(div);
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
-    function setStatus(online, metin) {
-      statusDot.className = `status-dot ${online ? 'online' : 'offline'}`;
-      statusText.textContent = metin;
-    }
+    // ============================================================
+    // ✅ KRİTİK YAMA: APPS SCRIPT İLETİŞİM (Simple Request & CORS Fix)
+    // ============================================================
+    // ============================================================
+    // APPS SCRIPT İLETİŞİM KATMANI
+    // ============================================================
+    // ✅ ÇÖZÜM: fetch() yerine google.script.run kullanılıyor.
+    //
+    // Neden fetch() çalışmıyordu:
+    //   Türkiye mobil ağlarında tarayıcı içinden script.google.com'a
+    //   yapılan JavaScript fetch() istekleri DNS çözümlemesinde
+    //   ERR_NAME_NOT_RESOLVED hatası alıyor. Sayfa yükleniyor (doGet)
+    //   ama JS'ten ayrı HTTP isteği atılamıyor.
+    //
+    // Neden google.script.run çalışır:
+    //   google.script.run Apps Script'in HTML sayfaları için sunduğu
+    //   YERLEŞİK iletişim yöntemidir. Tarayıcıdan dışarıya HTTP isteği
+    //   ATMAZ — sayfa zaten script.google.com içinde olduğu için
+    //   direkt sunucu tarafındaki fonksiyonu çağırır. DNS sorunu yok.
+    //
+    // Nasıl çalışır:
+    //   google.script.run
+    //     .withSuccessHandler(fn)   // başarıda çağrılacak callback
+    //     .withFailureHandler(fn)   // hata olursa çağrılacak callback
+    //     .sunucuFonksiyonu(arg)    // Code.gs'teki public fonksiyon
+    //
+    // Biz bunu Promise'e sarıyoruz ki async/await ile kullanılabilsin.
+    // Code.gs'e tek bir köprü fonksiyonu ekliyoruz: htmlKoprusu(payload)
+    // Bu fonksiyon JSON string alır, doPost'un switch'ini çağırır,
+    // JSON string döndürür. Böylece mevcut tüm kod değişmeden çalışır.
 
-    function updateCounter(sayac) {
-      counterDisplay.textContent = `🔄 Tur: ${sayac} / ${CONFIG.MAX_TUR}`;
-    }
+    function appScriptIstek(tip, veri) {
+      veri = veri || {};
+      const payload = {
+        tip: tip,
+        sifre: CONFIG.ERISIM_SIFRESI,
+        ...veri,
+        oturum_id: state.oturumId,
+      };
 
-    function updateOturum(id) {
-      oturumDisplay.textContent = `📋 Oturum: ${id || '—'}`;
+      return new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(function(jsonStr) {
+            try {
+              const sonuc = JSON.parse(jsonStr);
+              resolve(sonuc);
+            } catch(e) {
+              reject(new Error('Sunucu geçersiz JSON döndürdü: ' + jsonStr.slice(0, 100)));
+            }
+          })
+          .withFailureHandler(function(hata) {
+            reject(new Error(hata.message || String(hata)));
+          })
+          .htmlKoprusu(JSON.stringify(payload));
+      });
     }
 
     // ============================================================
-    // APPS SCRIPT İLETİŞİM
+    // AÇILIŞ RAPORU
     // ============================================================
-    async function appScriptIstek(tip, veri = {}) {
+    function acilisRaporuGoster(baglam) {
+      const modal = document.getElementById('acilisRaporuModal');
+      const icerik = document.getElementById('acilisRaporuIcerik');
+      if (!baglam) return;
+
+      const acikArge = (baglam.acik_arge || []);
+      const acikSorun = (baglam.acik_sorunlar || []);
+      const sonSohbet = baglam.onceki_sohbet ? '✅ Var (Drive\'dan okundu)' : '❌ Yok (ilk oturum)';
+
+      let html = '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:12px 14px;margin-bottom:12px;">';
+      html += '<div style="font-weight:600;margin-bottom:8px;">📊 Bağlam Özeti</div>';
+      html += '<div>📖 Önceki sohbet: ' + sonSohbet + '</div>';
+      html += '<div>💡 Açık ARGE: <strong style="color:#58a6ff;">' + acikArge.length + '</strong></div>';
+      html += '<div>⚠️ Açık Sorun: <strong style="color:#f85149;">' + acikSorun.length + '</strong></div>';
+      html += '</div>';
+
+      if (acikArge.length > 0) {
+        html += '<div style="margin-bottom:8px;"><strong>💡 Açık ARGE\'ler:</strong></div>';
+        acikArge.slice(0, 5).forEach(function(s) {
+          html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px;color:#8b949e;">' + s + '</div>';
+        });
+        if (acikArge.length > 5) html += '<div style="color:#8b949e;font-size:11px;">...ve ' + (acikArge.length-5) + ' tane daha</div>';
+      }
+      if (acikSorun.length > 0) {
+        html += '<div style="margin:8px 0;"><strong>⚠️ Açık Sorunlar:</strong></div>';
+        acikSorun.slice(0, 5).forEach(function(s) {
+          html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px;color:#8b949e;">' + s + '</div>';
+        });
+      }
+      if (acikArge.length === 0 && acikSorun.length === 0) {
+        html += '<div style="color:#3fb950;font-size:13px;">✅ Açık ARGE veya sorun yok. Temiz başlangıç!</div>';
+      }
+
+      icerik.innerHTML = html;
+      modal.style.display = 'flex';
+
+      const kapat = function() { modal.style.display = 'none'; };
+      document.getElementById('acilisRaporuKapatBtn').onclick = kapat;
+      document.getElementById('acilisRaporuKapatBtn2').onclick = kapat;
+      document.getElementById('acilisRaporuDevamBtn').onclick = kapat;
+    }
+
+    document.getElementById('acilisRaporuBtn').addEventListener('click', function() {
+      if (state._sonBaglam) {
+        acilisRaporuGoster(state._sonBaglam);
+      } else {
+        sistemMesaji('⚠️ Önce oturum başlatılmalı.');
+      }
+    });
+
+    // ============================================================
+    // DASHBOARD
+    // ============================================================
+    function dashboardGuncelle() {
+      const icerik = document.getElementById('dashboardIcerik');
+      const acikArge = (state._sonBaglam && state._sonBaglam.acik_arge) || [];
+      const acikSorun = (state._sonBaglam && state._sonBaglam.acik_sorunlar) || [];
+
+      const yzKullanim = {};
+      state.sohbetGecmisi.forEach(function(m) {
+        if (m.role === 'assistant' && m.yz) {
+          yzKullanim[m.yz] = (yzKullanim[m.yz] || 0) + 1;
+        }
+      });
+      const sorular = state.sohbetGecmisi.filter(function(m) { return m.role === 'user'; }).length;
+      const cevaplar = state.sohbetGecmisi.filter(function(m) { return m.role === 'assistant'; }).length;
+
+      let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
+      html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:10px;">';
+      html += '<div style="font-size:11px;color:#8b949e;">Soru / Cevap</div>';
+      html += '<div style="font-size:20px;font-weight:700;">' + sorular + ' / ' + cevaplar + '</div></div>';
+      html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:10px;">';
+      html += '<div style="font-size:11px;color:#8b949e;">Tur / Maks</div>';
+      html += '<div style="font-size:20px;font-weight:700;">' + state.turSayaci + ' / ' + CONFIG.MAX_TUR + '</div></div>';
+      html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:10px;">';
+      html += '<div style="font-size:11px;color:#8b949e;">Açık ARGE</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#58a6ff;">' + acikArge.length + '</div></div>';
+      html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:10px;">';
+      html += '<div style="font-size:11px;color:#8b949e;">Açık Sorun</div>';
+      html += '<div style="font-size:20px;font-weight:700;color:#f85149;">' + acikSorun.length + '</div></div>';
+      html += '</div>';
+
+      html += '<div style="font-weight:600;font-size:12px;margin-bottom:6px;">Sonraki sentez: ' + (CONFIG.MAX_TUR - state.turSayaci) + ' tur kaldı</div>';
+      html += '<div style="background:#0b0e11;border-radius:6px;height:8px;margin-bottom:12px;overflow:hidden;">';
+      html += '<div style="background:#58a6ff;height:100%;width:' + Math.round((state.turSayaci/CONFIG.MAX_TUR)*100) + '%;transition:width 0.3s;"></div></div>';
+
+      if (acikArge.length > 0) {
+        html += '<div style="font-weight:600;font-size:12px;margin-bottom:6px;">💡 Açık ARGE\'ler</div>';
+        acikArge.slice(0,3).forEach(function(s) {
+          html += '<div style="font-size:11px;color:#8b949e;padding:4px 0;border-bottom:1px solid #30363d;">' + s.slice(0,80) + '</div>';
+        });
+      }
+
+      if (state.aktifKonuId) {
+        html += '<div style="margin-top:10px;padding:8px 10px;background:#0b0e11;border:1px solid #58a6ff;border-radius:6px;font-size:12px;">';
+        html += '▶️ Aktif konu: <strong>' + state.aktifKonuId + '</strong></div>';
+      }
+
+      icerik.innerHTML = html;
+    }
+
+    const dashboardModal = document.getElementById('dashboardModal');
+    document.getElementById('dashboardBtn').addEventListener('click', function() {
+      dashboardGuncelle();
+      dashboardModal.style.display = 'flex';
+    });
+    document.getElementById('dashboardKapatBtn').addEventListener('click', function() {
+      dashboardModal.style.display = 'none';
+    });
+
+    // ============================================================
+    // BAĞLANTI TESTİ
+    // ============================================================
+    baglantiTestBtn.addEventListener('click', async function() {
+      baglantiTestPaneli.style.display = 'block';
+      baglantiTestSonuclari.innerHTML = '<span style="color:var(--text-muted);">🔄 Test ediliyor...</span>';
       try {
-        const payload = {
-          tip: tip,
-          sifre: CONFIG.ERISIM_SIFRESI,
-          ...veri,
-          oturum_id: state.oturumId,
-        };
+        const sonuc = await appScriptIstek('baglanti_testi');
+        if (!sonuc.basarili) {
+          baglantiTestSonuclari.innerHTML = '<span style="color:#ef4444;">❌ Test başarısız: ' + (sonuc.hata || 'bilinmeyen hata') + '</span>';
+          return;
+        }
+        baglantiTestSonuclari.innerHTML = sonuc.sonuclar.map(function(r) {
+          if (!r.key_var) return '<span style="background:#333;color:#888;">⬜ ' + r.yz + ' — key yok</span>';
+          if (r.basarili) return '<span style="background:#065f46;color:#a7f3d0;">✅ ' + r.yz + '</span>';
+          return '<span title="' + (r.detay || '').replace(/"/g, '&quot;') + '" style="background:#7f1d1d;color:#fecaca;cursor:help;">❌ ' + r.yz + ' — ' + (r.detay || 'hata').slice(0, 60) + '</span>';
+        }).join('');
+      } catch (err) {
+        baglantiTestSonuclari.innerHTML = '<span style="color:#ef4444;">❌ İstek gönderilemedi: ' + err.message + '</span>';
+      }
+    });
 
-        const response = await fetch(CONFIG.APP_SCRIPT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
+    // ============================================================
+    // DRIVE YAPISI DENETİMİ
+    // ============================================================
+    const driveDenetlePanel = document.getElementById('driveDenetlePanel');
+    const driveDenetleIcerik = document.getElementById('driveDenetleIcerik');
+    document.getElementById('driveDenetleBtn').addEventListener('click', async function() {
+      driveDenetlePanel.style.display = 'flex';
+      driveDenetleIcerik.innerHTML = '🔄 Denetleniyor...';
+      try {
+        const sonuc = await appScriptIstek('drive_denetle');
+        if (!sonuc.basarili) {
+          driveDenetleIcerik.innerHTML = '<span style="color:#f85149;">❌ ' + (sonuc.hata || 'Denetim başarısız') + '</span>';
+          return;
+        }
+        let html = '<div style="margin-bottom:10px;">' +
+          (sonuc.anaKlasorVar ? '✅' : '❌') + ' Ana klasör (ANA_KLASOR_ID) &nbsp; ' +
+          (sonuc.anayasaVar ? '✅' : '❌') + ' 00_ANAYASA.md</div>';
+        html += sonuc.klasorler.map(function(k) {
+          let satir = '<div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #30363d;">';
+          satir += '<div>' + (k.var_mi ? '✅' : '❌') + ' <strong>' + k.ad + '/</strong></div>';
+          k.dosyalar.forEach(function(d) { satir += '<div style="padding-left:20px; color:#8b949e;">' + (d.var_mi ? '✅' : '❌') + ' ' + d.ad + '</div>'; });
+          k.altKlasorler.forEach(function(a) { satir += '<div style="padding-left:20px; color:#8b949e;">' + (a.var_mi ? '✅' : '❌') + ' ' + a.ad + '/ (alt klasör)</div>'; });
+          satir += '</div>';
+          return satir;
+        }).join('');
+        const eksikVar = sonuc.klasorler.some(function(k) {
+          return !k.var_mi || k.dosyalar.some(function(d){return !d.var_mi;}) || k.altKlasorler.some(function(a){return !a.var_mi;});
+        });
+        if (eksikVar) {
+          html = '<div style="margin-bottom:12px; padding:10px; background:#3d2817; border:1px solid #f0883e; border-radius:8px; color:#f0883e;">⚠️ Eksik klasör/dosya var. Yeni bir oturum başlatmak (sayfayı yenilemek) bunları otomatik oluşturur — silme/değiştirme yapmaz.</div>' + html;
+        } else {
+          html = '<div style="margin-bottom:12px; padding:10px; background:#0d2818; border:1px solid #3fb950; border-radius:8px; color:#3fb950;">✅ Her şey eksiksiz.</div>' + html;
+        }
+        driveDenetleIcerik.innerHTML = html;
+      } catch (err) {
+        driveDenetleIcerik.innerHTML = '<span style="color:#f85149;">❌ ' + err.message + '</span>';
+      }
+    });
+    document.getElementById('driveDenetleKapatBtn').addEventListener('click', function() {
+      driveDenetlePanel.style.display = 'none';
+    });
+
+    // ============================================================
+    // DRIVE'DAN DOSYA SEÇİCİ
+    // ============================================================
+    let drivePanelGeciciSecim = [];
+
+    function driveSeciliDosyalariRenderEt() {
+      if (!state.driveSeciliDosyalar.length) {
+        driveSeciliDosyalarDiv.style.display = 'none';
+        driveSeciliDosyalarDiv.innerHTML = '';
+        return;
+      }
+      driveSeciliDosyalarDiv.style.display = 'flex';
+      driveSeciliDosyalarDiv.innerHTML = state.driveSeciliDosyalar.map(function(d, i) {
+        return '<span style="background:rgba(59,130,246,0.15); color:#93c5fd; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">📎 ' + d.ad +
+          '<button data-idx="' + i + '" class="drive-chip-sil" style="background:none; border:none; color:#93c5fd; cursor:pointer; font-size:13px; padding:0;">✕</button></span>';
+      }).join('');
+      driveSeciliDosyalarDiv.querySelectorAll('.drive-chip-sil').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          state.driveSeciliDosyalar.splice(parseInt(this.dataset.idx, 10), 1);
+          driveSeciliDosyalariRenderEt();
+        });
+      });
+    }
+
+    async function driveKlasoruAc(klasorId) {
+      drivePanelIcerik.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">🔄 Yükleniyor...</div>';
+      try {
+        const sonuc = await appScriptIstek('drive_gezin', { klasorId: klasorId });
+        if (!sonuc.basarili) {
+          drivePanelIcerik.innerHTML = '<div style="color:#ef4444; font-size:13px;">❌ ' + (sonuc.hata || 'Klasör okunamadı') + '</div>';
+          return;
+        }
+        drivePanelBaslik.textContent = '📁 ' + sonuc.klasorAdi;
+        drivePanel.dataset.klasorId = sonuc.klasorId;
+        drivePanel.dataset.ustKlasorId = sonuc.ustKlasorId || '';
+
+        let html = '';
+        if (sonuc.ustKlasorId) html += '<div class="drive-item drive-ust" style="padding:8px 6px; cursor:pointer; border-bottom:1px solid var(--border,#333); color:var(--text-muted);">⬆️ .. (üst klasöre dön)</div>';
+        
+        sonuc.altKlasorler.forEach(function(k) {
+          html += '<div class="drive-item drive-klasor" data-id="' + k.id + '" style="padding:8px 6px; cursor:pointer; border-bottom:1px solid var(--border,#222);">📁 ' + k.ad + '</div>';
+        });
+        sonuc.dosyalar.forEach(function(f) {
+          const secili = drivePanelGeciciSecim.some(function(s) { return s.id === f.id; });
+          html += '<div class="drive-item drive-dosya" data-id="' + f.id + '" data-ad="' + f.ad.replace(/"/g, '&quot;') + '" style="padding:8px 6px; cursor:pointer; border-bottom:1px solid var(--border,#222); display:flex; justify-content:space-between; ' + (secili ? 'background:rgba(59,130,246,0.15);' : '') + '"><span>📄 ' + f.ad + ' <span style="color:var(--text-muted); font-size:11px;">(' + f.boyutKB + ' KB)</span></span><span>' + (secili ? '✅' : '') + '</span></div>';
+        });
+        if (!sonuc.altKlasorler.length && !sonuc.dosyalar.length) {
+          html += '<div style="color:var(--text-muted); font-size:13px; padding:8px 6px;">Bu klasör boş.</div>';
+        }
+        drivePanelIcerik.innerHTML = html;
+
+        const ustEl = drivePanelIcerik.querySelector('.drive-ust');
+        if (ustEl) ustEl.addEventListener('click', function() { driveKlasoruAc(drivePanel.dataset.ustKlasorId || null); });
+
+        drivePanelIcerik.querySelectorAll('.drive-klasor').forEach(function(el) {
+          el.addEventListener('click', function() { driveKlasoruAc(this.dataset.id); });
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
-      } catch (error) {
-        console.error('Apps Script hatası:', error);
-        throw error;
+        drivePanelIcerik.querySelectorAll('.drive-dosya').forEach(function(el) {
+          el.addEventListener('click', function() {
+            const id = this.dataset.id, ad = this.dataset.ad;
+            const idx = drivePanelGeciciSecim.findIndex(function(s) { return s.id === id; });
+            if (idx === -1) drivePanelGeciciSecim.push({ id: id, ad: ad });
+            else drivePanelGeciciSecim.splice(idx, 1);
+            driveKlasoruAc(drivePanel.dataset.klasorId);
+          });
+        });
+      } catch (err) {
+        drivePanelIcerik.innerHTML = '<div style="color:#ef4444; font-size:13px;">❌ ' + err.message + '</div>';
       }
     }
+
+    driveSecBtn.addEventListener('click', function() {
+      drivePanelGeciciSecim = [];
+      drivePanel.style.display = 'flex';
+      driveKlasoruAc(null); 
+    });
+
+    drivePanelKapatBtn.addEventListener('click', function() { drivePanel.style.display = 'none'; });
+
+    driveEkleBtn.addEventListener('click', function() {
+      drivePanelGeciciSecim.forEach(function(d) {
+        if (!state.driveSeciliDosyalar.some(function(s) { return s.id === d.id; })) state.driveSeciliDosyalar.push(d);
+      });
+      driveSeciliDosyalariRenderEt();
+      drivePanel.style.display = 'none';
+    });
+
+    // ============================================================
+    // MODAL SİSTEMİ
+    // ============================================================
+    const _modalEl = document.createElement('div');
+    _modalEl.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;';
+    document.body.appendChild(_modalEl);
+
+    function _modalKapat() { _modalEl.style.display = 'none'; _modalEl.innerHTML = ''; }
+
+    function modalSor(baslik, aciklama, varsayilan) {
+      return new Promise(function(resolve) {
+        _modalEl.style.display = 'flex';
+        _modalEl.innerHTML = '<div style="background:#1c2333;border:1px solid #30363d;border-radius:12px;padding:20px 22px;width:min(420px,90vw);">' +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">' + baslik + '</div>' +
+          (aciklama ? '<div style="font-size:12px;color:#8b949e;margin-bottom:10px;">' + aciklama + '</div>' : '') +
+          '<input id="_modalInput" type="text" value="' + escapeHtml(varsayilan || '') + '" style="width:100%;background:#0b0e11;border:1px solid #30363d;border-radius:6px;padding:8px 10px;color:#e6edf3;font-size:13px;outline:none;" />' +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">' +
+            '<button id="_modalIptal" style="padding:7px 14px;border-radius:7px;border:1px solid #30363d;background:transparent;color:#8b949e;cursor:pointer;">İptal</button>' +
+            '<button id="_modalOk" style="padding:7px 14px;border-radius:7px;border:none;background:#58a6ff;color:#0b0e11;font-weight:600;cursor:pointer;">Tamam</button>' +
+          '</div></div>';
+        const inp = document.getElementById('_modalInput');
+        inp.focus(); inp.select();
+        function tamam() { _modalKapat(); resolve(inp.value); }
+        function iptal() { _modalKapat(); resolve(null); }
+        document.getElementById('_modalOk').addEventListener('click', tamam);
+        document.getElementById('_modalIptal').addEventListener('click', iptal);
+        inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') tamam(); if (e.key === 'Escape') iptal(); });
+      });
+    }
+
+    function modalOnayla(baslik, aciklama) {
+      return new Promise(function(resolve) {
+        _modalEl.style.display = 'flex';
+        _modalEl.innerHTML = '<div style="background:#1c2333;border:1px solid #30363d;border-radius:12px;padding:20px 22px;width:min(380px,90vw);">' +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">' + baslik + '</div>' +
+          (aciklama ? '<div style="font-size:12px;color:#8b949e;margin-bottom:14px;">' + aciklama + '</div>' : '') +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;"><button id="_modalIptal" style="padding:7px 14px;border-radius:7px;border:1px solid #30363d;background:transparent;color:#8b949e;cursor:pointer;">Hayır</button><button id="_modalOk" style="padding:7px 14px;border-radius:7px;border:none;background:#f85149;color:#fff;font-weight:600;cursor:pointer;">Evet, Sil</button></div></div>';
+        document.getElementById('_modalOk').addEventListener('click', function() { _modalKapat(); resolve(true); });
+        document.getElementById('_modalIptal').addEventListener('click', function() { _modalKapat(); resolve(false); });
+      });
+    }
+
+    function modalSec(baslik, secenekler) {
+      return new Promise(function(resolve) {
+        _modalEl.style.display = 'flex';
+        const butonlar = Object.entries(secenekler).map(function(e) {
+          return '<button class="_modalSecBtn" data-val="' + e[0] + '" style="display:block;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border-radius:7px;border:1px solid #30363d;background:#0b0e11;color:#e6edf3;cursor:pointer;">' + e[1] + '</button>';
+        }).join('');
+        _modalEl.innerHTML = '<div style="background:#1c2333;border:1px solid #30363d;border-radius:12px;padding:20px 22px;width:min(360px,90vw);"><div style="font-size:14px;font-weight:600;margin-bottom:12px;">' + baslik + '</div>' + butonlar + '<button id="_modalIptal" style="width:100%;padding:7px;border-radius:7px;border:1px solid #30363d;background:transparent;color:#8b949e;cursor:pointer;margin-top:4px;">İptal</button></div>';
+        _modalEl.querySelectorAll('._modalSecBtn').forEach(function(b) {
+          b.addEventListener('click', function() { _modalKapat(); resolve(this.dataset.val); });
+        });
+        document.getElementById('_modalIptal').addEventListener('click', function() { _modalKapat(); resolve(null); });
+      });
+    }
+
+    // ============================================================
+    // ARGE / ÖZEL "KONU" LİSTESİ PANELİ
+    // ============================================================
+    let konularAktifFiltre = '';
+
+    async function konulariYukleVeGoster() {
+      konularPanelIcerik.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">🔄 Yükleniyor...</div>';
+      try {
+        const sonuc = await appScriptIstek('konu_listele', { konuTipi: konularAktifFiltre || null });
+        if (!sonuc.basarili) {
+          konularPanelIcerik.innerHTML = '<div style="color:#ef4444; font-size:13px;">❌ ' + (sonuc.hata || 'Liste alınamadı') + '</div>';
+          return;
+        }
+        if (!sonuc.konular.length) {
+          konularPanelIcerik.innerHTML = '<div style="color:var(--text-muted); font-size:13px; padding:8px 0;">Henüz kayıtlı konu yok.</div>';
+          return;
+        }
+        konularPanelIcerik.innerHTML = sonuc.konular.map(function(k) {
+          const ikon = k.tip === 'arge' ? '💡' : '🔒';
+          const durumEtiketi = k.sonuc === 'beklemede'
+            ? '<span style="color:#fbbf24;">● beklemede</span>'
+            : (k.durum === 'acik' ? '<span style="color:#4ade80;">● açık</span>' : '<span style="color:var(--text-muted);">● kapalı (' + (k.sonuc || '') + ')</span>');
+          return '<div style="padding:10px 0; border-bottom:1px solid var(--border,#222);"><div style="font-weight:600;">' + ikon + ' ' + k.id + ': ' + k.baslik + '</div><div style="font-size:11px; color:var(--text-muted); margin:4px 0;">📅 Açılış: ' + k.acilis + ' · 🔄 Son: ' + k.sonGuncelleme + ' · 💬 ' + (k.mesajSayisi || 0) + ' mesaj · ' + durumEtiketi + '</div>' +
+            (k.durum === 'acik' ? ('<div style="display:flex; gap:6px; margin-top:6px;"><button class="konu-devam" data-id="' + k.id + '" data-tip="' + k.tip + '" style="font-size:12px; padding:3px 10px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">▶️ Devam Et</button>' + (k.tip === 'arge' ? '<button class="konu-kapat" data-id="' + k.id + '" style="font-size:12px; padding:3px 10px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">✅ Kapat</button>' : '') + '<button class="konu-sil" data-id="' + k.id + '" style="font-size:12px; padding:3px 10px; border-radius:6px; border:1px solid #7f1d1d; background:transparent; color:#fca5a5; cursor:pointer;">🗑️ Sil</button></div>') : ('<button class="konu-sil" data-id="' + k.id + '" style="font-size:12px; padding:3px 10px; border-radius:6px; border:1px solid #7f1d1d; background:transparent; color:#fca5a5; cursor:pointer;">🗑️ Sil</button>')) + '</div>';
+        }).join('');
+
+        konularPanelIcerik.querySelectorAll('.konu-devam').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            state.aktifKonuId = this.dataset.id;
+            if (this.dataset.tip === 'ozel') {
+              messageInput.value = '#özel';
+              mesajGonder();
+            } else {
+              sistemMesaji('▶️ ' + this.dataset.id + ' aktif konu yapıldı. Bundan sonraki #arge mesajları bu konuya eklenecek.');
+            }
+            konularPanel.style.display = 'none';
+          });
+        });
+
+        konularPanelIcerik.querySelectorAll('.konu-kapat').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            const sonucTurleri = { '1': 'karara_donustu', '2': 'iptal', '3': 'beklemede' };
+            const secimNo = await modalSec('ARGE sonucu ne oldu?', { '1': '✅ Karara dönüştü', '2': '❌ İptal', '3': '📝 Beklemede bırak' });
+            if (!secimNo) return;
+            const sonucTuru = sonucTurleri[secimNo];
+            let karMetni = null;
+            if (sonucTuru === 'karara_donustu') {
+              karMetni = await modalSor('Karar ne oldu?', 'Boş bırakırsan ARGE başlığı kullanılır.');
+              if (karMetni === null) return; 
+            }
+            const r = await appScriptIstek('konu_kapat', { konuId: this.dataset.id, sonuc: sonucTuru, karMetni: karMetni });
+            if (r.basarili) {
+              if (state.aktifKonuId === this.dataset.id) state.aktifKonuId = null;
+              sistemMesaji('✅ ' + this.dataset.id + ' kapatıldı.' + (r.olusanKarar ? ' Karar oluştu: ' + r.olusanKarar : ''));
+              konulariYukleVeGoster();
+            } else {
+              sistemMesaji('❌ Kapatma başarısız: ' + r.hata);
+            }
+          });
+        });
+
+        konularPanelIcerik.querySelectorAll('.konu-sil').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            const onay = await modalOnayla(this.dataset.id + ' silinsin mi?', 'Bu işlem geri alınamaz.');
+            if (!onay) return;
+            const r = await appScriptIstek('konu_sil', { konuId: this.dataset.id });
+            if (r.basarili) {
+              if (state.aktifKonuId === this.dataset.id) state.aktifKonuId = null;
+              konulariYukleVeGoster();
+            } else {
+              sistemMesaji('❌ Silme başarısız: ' + r.hata);
+            }
+          });
+        });
+      } catch (err) {
+        konularPanelIcerik.innerHTML = '<div style="color:#ef4444; font-size:13px;">❌ ' + err.message + '</div>';
+      }
+    }
+
+    konularBtn.addEventListener('click', function() {
+      konularPanel.style.display = 'flex';
+      konulariYukleVeGoster();
+    });
+    konularPanelKapatBtn.addEventListener('click', function() { konularPanel.style.display = 'none'; });
+    konularPanel.querySelectorAll('.konu-filtre').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        konularPanel.querySelectorAll('.konu-filtre').forEach(function(b) { b.classList.remove('aktif'); });
+        btn.classList.add('aktif');
+        konularAktifFiltre = btn.dataset.tip;
+        konulariYukleVeGoster();
+      });
+    });
 
     // ============================================================
     // ONAY GÖNDER
@@ -649,17 +1156,16 @@
 
         if (sonuc.basarili) {
           sistemMesaji('✅ Onay işlemi tamamlandı. Değişiklik uygulandı.');
-          // Sayaç güncelle
           if (sonuc.turSayaci !== undefined) {
             state.turSayaci = sonuc.turSayaci;
             updateCounter(state.turSayaci);
           }
         } else {
-          sistemMesaji(`❌ Onay hatası: ${sonuc.hata || 'Bilinmeyen'}`);
+          sistemMesaji('❌ Onay hatası: ' + (sonuc.hata || 'Bilinmeyen'));
         }
         setStatus(true, 'Bağlı');
       } catch (e) {
-        sistemMesaji(`❌ Onay gönderilemedi: ${e.message}`);
+        sistemMesaji('❌ Onay gönderilemedi: ' + e.message);
         setStatus(false, 'Bağlantı hatası');
       }
     }
@@ -673,76 +1179,112 @@
       const metin = messageInput.value.trim();
       if (!metin) return;
 
-      // ✅ v4: Paralel mod açıksa farklı akışa git (5 YZ'ye birden sor)
       if (state.paralelModAcik) {
         return paralelSorGonder(metin);
       }
 
-      // Aktif etiketi otomatik ekle (seçili değilse)
       let etiketler = etiketleriBul(metin);
       if (state.aktifEtiket && !etiketler.includes(state.aktifEtiket)) {
         etiketler.push(state.aktifEtiket);
-        // Metnin sonuna etiketi ekle (yoksa)
         if (!metin.includes(state.aktifEtiket)) {
           messageInput.value = metin + ' ' + state.aktifEtiket;
         }
       }
 
-      // Tekrar etiketleri tazele
       const sonMetin = messageInput.value.trim();
       const sonEtiketler = etiketleriBul(sonMetin);
       const mesaj = sonMetin;
+      const gonderilecekDosyalar = state.driveSeciliDosyalar.slice();
 
-      // UI'ı temizle
+      let konuBaslikGirdisi = null;
+      if (sonEtiketler.includes('#arge') && !state.aktifKonuId) {
+        konuBaslikGirdisi = await modalSor('Yeni ARGE konusu', 'Kısa bir başlık ver — ileride "ARGE-003: Redis caching" gibi listede görünecek.\nBoş bırakırsan mesajın ilk 50 karakteri kullanılır.', '');
+        if (konuBaslikGirdisi === null) konuBaslikGirdisi = '';
+      }
+
+      let ozelBaslikGirdisi = null;
+      if (sonMetin.trim() === '#özel' || sonMetin.trim() === '#ozel') {
+        ozelBaslikGirdisi = await modalSor('Özel kanal başlığı', 'Bu sohbet Drive\'a kaydedilmeyecek. Listede görünmesi için bir başlık ver.\nÖrn: "İş görüşmesi", "Kişisel not"', '');
+        if (ozelBaslikGirdisi === null) ozelBaslikGirdisi = '';
+      }
+
       messageInput.value = '';
       messageInput.style.height = 'auto';
       state.isProcessing = true;
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="loading"></span> Gönderiliyor...';
 
-      // Kullanıcı mesajını göster
-      mesajEkle(mesaj, 'user', sonEtiketler, { tarih: formatTarih() });
+      state.mesajNo++;
+      const buTurNumarasi = state.mesajNo;
+
+      mesajEkle(mesaj, 'user', sonEtiketler, {
+        tarih: formatTarih(),
+        driveDosyalari: gonderilecekDosyalar.map(function(d) { return d.ad; }),
+        mesajNo: buTurNumarasi,
+      });
       state.sohbetGecmisi.push({ role: 'user', content: mesaj, etiketler: sonEtiketler });
 
       try {
         setStatus(true, 'YZ düşünüyor...');
 
-        // Apps Script'e gönder
         const sonuc = await appScriptIstek('mesaj', {
           kullanici_mesaji: mesaj,
           etiketler: sonEtiketler,
           sohbet_gecmisi: state.sohbetGecmisi,
           cot_modu: CONFIG.COT_MODU,
+          drive_dosyalari: gonderilecekDosyalar.map(function(d) { return d.id; }),
+          aktif_konu_id: state.aktifKonuId,
+          konu_baslik: konuBaslikGirdisi,
+          ozel_baslik: ozelBaslikGirdisi,
         });
 
-        // Tur sayacı
+        state.driveSeciliDosyalar = [];
+        driveSeciliDosyalariRenderEt();
+
+        if (sonuc.arge_konu && sonuc.arge_konu.id) {
+          state.aktifKonuId = sonuc.arge_konu.id;
+          sistemMesaji('💡 ' + sonuc.arge_konu.id + ' aktif konu: "' + sonuc.arge_konu.baslik + '"');
+        } else if (!sonEtiketler.includes('#arge') && !sonuc.ozel_kanal) {
+          state.aktifKonuId = null;
+        }
+        if (sonuc.aktif_konu_id !== undefined) {
+          state.aktifKonuId = sonuc.aktif_konu_id; 
+        }
+
         if (sonuc.turSayaci !== undefined) {
           state.turSayaci = sonuc.turSayaci;
           updateCounter(state.turSayaci);
         }
 
-        // Oturum ID
         if (sonuc.oturum_id) {
           state.oturumId = sonuc.oturum_id;
           updateOturum(state.oturumId);
         }
 
-        // YZ cevabı
         if (sonuc.yz_cevabi) {
           const yzEtiketler = etiketleriBul(sonuc.yz_cevabi);
-          mesajEkle(sonuc.yz_cevabi, 'yz', yzEtiketler, {
+          var otomatikGecis = sonuc.yz_otomatik_gecis || null;
+          var gosterilecekCevap = sonuc.yz_cevabi;
+
+          mesajEkle(gosterilecekCevap, 'yz', yzEtiketler, {
             tarih: formatTarih(),
             onaylandi: sonuc.onaylandi || false,
             originalMessage: mesaj,
             onayId: sonuc.onay_id,
+            ozel_kanal: sonuc.ozel_kanal || false,
+            yz_adi: sonuc.yz_adi || 'YZ',
+            yz_kodu: sonuc.yz_kodu || 'otomatik',
+            yz_otomatik_gecis: otomatikGecis,
+            mesajNo: buTurNumarasi,
           });
-          state.sohbetGecmisi.push({ role: 'assistant', content: sonuc.yz_cevabi });
+          if (!sonuc.kayit_yapilmadi) {
+            state.sohbetGecmisi.push({ role: 'assistant', content: sonuc.yz_cevabi });
+          }
           if (CONFIG.COT_MODU && sonuc.cot_kaydedildi) {
             sistemMesaji('🧬 Düşünce zinciri + felsefe 07_YZ_DNA/yz_dna.jsonl\'e kaydedildi.');
           }
         }
 
-        // Sentez tetiklendiyse
         if (sonuc.sentezGerekli) {
           sistemMesaji('🔄 8. tur tamamlandı. Sentez yapılıyor...');
           const sentezSonuc = await appScriptIstek('sentez', {
@@ -753,29 +1295,23 @@
             if (sentezSonuc.parse_basarili === false) {
               sistemMesaji('⚠️ YZ\'nin cevabı tam YAML formatında gelmedi — ham metin yedek olarak saklandı, veri kaybolmadı.');
             }
-            // ✅ v4: Apps Script "sayfa_yenilensin" sinyali verdiyse, tarayıcı
-            // sekmesini tamamen yeniler. Bu, kullanıcının istediği "temiz
-            // pencere" davranışıdır: tüm JS state sıfırlanır, sayfa yeniden
-            // yüklendiğinde init() yeniden çalışır, oturumBaslat() Drive'daki
-            // GÜNCEL sentezi/blueprint'i/kararları en baştan okur.
             if (sentezSonuc.sayfa_yenilensin) {
               sistemMesaji('🔁 Pencere 3 saniye içinde yenilenecek — yeni oturum Drive\'dan temiz okunacak...');
-              setTimeout(function () { window.location.reload(); }, 3000);
-              return; // reload gelecek, devam etmeye gerek yok
+              setTimeout(function() { window.location.reload(); }, 3000);
+              return;
             }
             state.turSayaci = 0;
             updateCounter(state.turSayaci);
           } else {
-            sistemMesaji(`❌ Sentez hatası: ${sentezSonuc.hata || 'Bilinmeyen'}`);
+            sistemMesaji('❌ Sentez hatası: ' + (sentezSonuc.hata || 'Bilinmeyen'));
           }
         }
 
         setStatus(true, 'Bağlı');
       } catch (error) {
         console.error(error);
-        sistemMesaji(`❌ Hata: ${error.message}`);
+        sistemMesaji('❌ Hata: ' + error.message);
         setStatus(false, 'Bağlantı hatası');
-        // Cevap gelmedi, kullanıcıya göster
         mesajEkle('Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.', 'yz', [], { tarih: formatTarih() });
       } finally {
         state.isProcessing = false;
@@ -788,7 +1324,7 @@
     }
 
     // ============================================================
-    // ✅ v4: 5-YZ PARALEL SORGU (paralel mod açıkken kullanılır)
+    // 5-YZ PARALEL SORGU
     // ============================================================
     async function paralelSorGonder(mesaj) {
       if (state.seciliYzler.length === 0) {
@@ -806,7 +1342,7 @@
       state.sohbetGecmisi.push({ role: 'user', content: mesaj });
 
       try {
-        setStatus(true, `${state.seciliYzler.length} YZ paralel düşünüyor...`);
+        setStatus(true, state.seciliYzler.length + ' YZ paralel düşünüyor...');
 
         const sonuc = await appScriptIstek('yz_sor', {
           soru: mesaj,
@@ -814,23 +1350,37 @@
         });
 
         if (sonuc.basarili && sonuc.sonuclar) {
-          // Her YZ'nin cevabını ayrı bir balon olarak göster
-          sonuc.sonuclar.forEach(function (r) {
+          sonuc.sonuclar.forEach(function(r) {
             if (r.basarili) {
-              mesajEkle(`<strong style="color:#a371f7;">[${r.yz.toUpperCase()}]</strong><br>${r.cevap}`, 'yz', [], { tarih: formatTarih() });
-              state.sohbetGecmisi.push({ role: 'assistant', content: '[' + r.yz + '] ' + r.cevap });
+              var yzAd = {
+                'gemini': 'Gemini 2.5 Flash',
+                'groq': 'Groq GPT-OSS',
+                'deepseek': 'DeepSeek Chat',
+                'openrouter': 'OpenRouter Llama',
+                'mistral': 'Mistral Small'
+              }[r.yz] || r.yz.toUpperCase();
+              mesajEkle(r.cevap, 'yz', [], { 
+                tarih: formatTarih(),
+                yz_adi: yzAd,
+                yz_kodu: r.yz
+              });
+              state.sohbetGecmisi.push({ role: 'assistant', content: '[' + r.yz + '] ' + r.cevap, yz: r.yz });
             } else {
-              mesajEkle(`<strong style="color:var(--red);">[${r.yz.toUpperCase()} HATA]</strong><br>${r.hata}`, 'yz', [], { tarih: formatTarih() });
+              mesajEkle(r.hata, 'yz', [], { 
+                tarih: formatTarih(),
+                yz_adi: r.yz.toUpperCase() + ' HATA',
+                yz_kodu: r.yz
+              });
             }
           });
-          sistemMesaji('🧠 5 YZ paralel cevabı tamamlandı. (Bu turlar normal 8-tur sayacına dahil değildir.)');
+          sistemMesaji('🧠 5 YZ paralel cevabı tamamlandı.');
         } else {
-          sistemMesaji(`❌ Paralel sorgu hatası: ${sonuc.hata || 'Bilinmeyen'}`);
+          sistemMesaji('❌ Paralel sorgu hatası: ' + (sonuc.hata || 'Bilinmeyen'));
         }
         setStatus(true, 'Bağlı');
       } catch (error) {
         console.error(error);
-        sistemMesaji(`❌ Hata: ${error.message}`);
+        sistemMesaji('❌ Hata: ' + error.message);
         setStatus(false, 'Bağlantı hatası');
       } finally {
         state.isProcessing = false;
@@ -854,26 +1404,34 @@
           updateOturum(state.oturumId);
           state.turSayaci = 0;
           updateCounter(state.turSayaci);
-          sistemMesaji(`✅ Oturum başlatıldı: ${state.oturumId}`);
+          sistemMesaji('✅ Oturum başlatıldı: ' + state.oturumId);
           setStatus(true, 'Bağlı');
 
-          // ✅ v3: Önceki oturumun sohbet özeti varsa kullanıcıya bildir.
-          // Not: bu YZ'nin "hatırlaması" değil — Drive'dan okunan bir
-          // dosya. YZ her çağrıda sıfırdan başlar, sadece bu metni okur.
+          state._sonBaglam = sonuc.baglam || null;
+
           if (sonuc.baglam && sonuc.baglam.onceki_sohbet) {
             sistemMesaji('📖 Önceki oturumun sohbet geçmişi Drive\'dan okundu ve bağlama eklendi.');
           }
 
-          // Varsa YZ'nin ilk mesajını göster
           if (sonuc.yz_cevabi) {
-            mesajEkle(sonuc.yz_cevabi, 'yz', [], { tarih: formatTarih() });
+            mesajEkle(sonuc.yz_cevabi, 'yz', [], { 
+              tarih: formatTarih(),
+              yz_adi: sonuc.yz_adi || 'YZ',
+              yz_kodu: sonuc.yz_kodu || 'otomatik'
+            });
+          }
+
+          const baglam = sonuc.baglam || {};
+          const acikVar = (baglam.acik_arge && baglam.acik_arge.length > 0) || (baglam.acik_sorunlar && baglam.acik_sorunlar.length > 0);
+          if (acikVar) {
+            setTimeout(function() { acilisRaporuGoster(baglam); }, 800);
           }
         } else {
-          sistemMesaji(`❌ Oturum başlatılamadı: ${sonuc.hata || 'Bilinmeyen'}`);
+          sistemMesaji('❌ Oturum başlatılamadı: ' + (sonuc.hata || 'Bilinmeyen'));
           setStatus(false, 'Hata');
         }
       } catch (error) {
-        sistemMesaji(`❌ Oturum hatası: ${error.message}`);
+        sistemMesaji('❌ Oturum hatası: ' + error.message);
         setStatus(false, 'Bağlantı hatası');
       }
     }
@@ -881,22 +1439,17 @@
     // ============================================================
     // EVENT LISTENER'LAR
     // ============================================================
-
-    // Etiket butonları
     etiketBar.addEventListener('click', function(e) {
       const btn = e.target.closest('.etiket-btn');
       if (!btn || btn === paralelToggleBtn) return;
       const etiket = btn.dataset.etiket;
 
-      // Aktif etiketi değiştir
-      document.querySelectorAll('.etiket-btn[data-etiket]').forEach(b => b.classList.remove('aktif'));
+      document.querySelectorAll('.etiket-btn[data-etiket]').forEach(function(b) { b.classList.remove('aktif'); });
       if (state.aktifEtiket === etiket) {
         state.aktifEtiket = null;
       } else {
         btn.classList.add('aktif');
         state.aktifEtiket = etiket;
-
-        // Input'a etiketi ekle
         const mevcut = messageInput.value.trim();
         if (!mevcut.includes(etiket)) {
           messageInput.value = mevcut + (mevcut ? ' ' : '') + etiket;
@@ -905,33 +1458,42 @@
       }
     });
 
-    // ✅ v4: 5-YZ paralel sorgu modu aç/kapa
-    paralelToggleBtn.addEventListener('click', function () {
+    paralelToggleBtn.addEventListener('click', function() {
       state.paralelModAcik = !state.paralelModAcik;
       paralelToggleBtn.classList.toggle('aktif', state.paralelModAcik);
       yzSecimBar.style.display = state.paralelModAcik ? 'flex' : 'none';
-      sendBtn.innerHTML = state.paralelModAcik
-        ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>'
-        : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
+      sendBtn.innerHTML = state.paralelModAcik ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>' : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
     });
 
-    // ✅ v4: Paralel modda hangi YZ'lerin hedefleneceğini seç
-    yzSecimBar.addEventListener('click', function (e) {
+    yzSecimBar.addEventListener('click', function(e) {
       const btn = e.target.closest('.yz-secim');
       if (!btn) return;
       const yz = btn.dataset.yz;
-      btn.classList.toggle('aktif');
-      if (btn.classList.contains('aktif')) {
-        if (!state.seciliYzler.includes(yz)) state.seciliYzler.push(yz);
+
+      if (e.ctrlKey || e.metaKey) {
+        btn.classList.toggle('aktif');
+        if (btn.classList.contains('aktif')) {
+          if (!state.seciliYzler.includes(yz)) state.seciliYzler.push(yz);
+        } else {
+          state.seciliYzler = state.seciliYzler.filter(function(y) { return y !== yz; });
+        }
       } else {
-        state.seciliYzler = state.seciliYzler.filter(function (y) { return y !== yz; });
+        yzSecimBar.querySelectorAll('.yz-secim').forEach(function(b) { b.classList.remove('aktif'); });
+        btn.classList.add('aktif');
+        state.seciliYzler = [yz];
+      }
+
+      if (state.seciliYzler.length === 0) {
+        const ilkBtn = yzSecimBar.querySelector('.yz-secim');
+        if (ilkBtn) {
+          ilkBtn.classList.add('aktif');
+          state.seciliYzler = [ilkBtn.dataset.yz];
+        }
       }
     });
 
-    // Gönder butonu
     sendBtn.addEventListener('click', mesajGonder);
 
-    // Enter ile gönder (Shift+Enter = yeni satır)
     messageInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -939,7 +1501,6 @@
       }
     });
 
-    // Otomatik yükseklik
     messageInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
@@ -949,18 +1510,21 @@
     // BAŞLAT
     // ============================================================
     async function init() {
-      // Önce oturumu başlat
+      if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('script.google.com') === -1) {
+        sistemMesaji('❌ Lütfen CONFIG.APP_SCRIPT_URL\'yi kendi Web App URL\'nle güncelle!');
+        setStatus(false, 'URL eksik');
+        return;
+      }
+
       await oturumBaslat();
 
-      // Hoş geldin mesajı
-      setTimeout(() => {
+      setTimeout(function() {
         if (chatArea.children.length === 0) {
-          sistemMesaji('👋 Hoş geldin! Blueprint geliştirme asistanı aktif. Bir şeyler yazmaya başla. (İstersen "🧠×5 Paralel Sor" ile tek soruyu 5 YZ\'ye birden sorabilirsin.)');
+          sistemMesaji('👋 Hoş geldin! Blueprint geliştirme asistanı aktif. Bir şeyler yazmaya başla.');
         }
       }, 500);
     }
 
-    // DOM yüklendikten sonra başlat
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
