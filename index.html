@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>🧠 Blueprint Asistanı v5</title>
   <style>
     /* ===== RESET & VARIABLES ===== */
@@ -28,14 +28,29 @@
       --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
+    html {
+      height: 100%;
+    }
+
     body {
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      /* ✅ SABİT GİRİŞ ÇUBUĞU DÜZELTMESİ:
+         100vh mobilde adres çubuğunu/klavyeyi hesaba katmaz, bu yüzden input
+         alanı yazı yazarken ekranın altına kayıp kayboluyordu. --app-height,
+         aşağıdaki script ile window.visualViewport üzerinden gerçek zamanlı
+         hesaplanıyor; 100vh/100dvh sadece JS çalışmadan önceki ilk an için
+         yedek (fallback) olarak duruyor. */
       height: 100vh;
+      height: 100dvh;
+      height: calc(var(--app-height, 100vh));
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: fixed;
+      inset: 0;
+      width: 100%;
     }
 
     .header {
@@ -47,6 +62,8 @@
       justify-content: space-between;
       flex-shrink: 0;
       min-height: 56px;
+      flex-wrap: wrap;
+      row-gap: 8px;
     }
 
     .header-left {
@@ -77,6 +94,8 @@
       align-items: center;
       gap: 8px;
       font-size: 13px;
+      flex-wrap: wrap;
+      row-gap: 6px;
     }
 
     .status-dot {
@@ -208,11 +227,13 @@
     .input-area {
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 10px 16px 14px;
+      padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       gap: 8px;
       flex-shrink: 0;
+      position: relative;
+      z-index: 50;
     }
 
     .input-row { display: flex; gap: 10px; align-items: flex-end; }
@@ -273,7 +294,6 @@
     .etiket-btn:hover { background: var(--surface2); border-color: var(--text-muted); }
     .etiket-btn.aktif { background: rgba(88, 166, 255, 0.15); border-color: var(--accent); color: var(--accent); }
 
-    #paralelToggleBtn.aktif { background: rgba(163, 113, 247, 0.18); border-color: #a371f7; color: #a371f7; font-weight: 600; }
     .yz-secim.aktif { background: rgba(63, 185, 80, 0.12); border-color: var(--green); color: var(--green); }
 
     #baglantiTestPaneli { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 8px 16px; font-size: 13px; display: none; }
@@ -332,17 +352,45 @@
 </head>
 <body>
 
+  <!-- ✅ MADDE 1: GİRİŞ VE STATE LOCK (ŞİFRE MODAL'I) -->
+  <div id="sifreModal" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border,#30363d);border-radius:14px;padding:32px;width:min(360px,90vw);text-align:center;">
+      <div style="font-size:32px;margin-bottom:12px;">🔐</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text);">Blueprint Sistemi</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Erişim için şifre girin</div>
+      <input id="sifreInput" type="password" placeholder="Şifre" style="width:100%;background:var(--surface2);border:1px solid var(--border,#30363d);border-radius:8px;padding:10px 14px;color:var(--text);font-size:15px;margin-bottom:12px;outline:none;box-sizing:border-box;" />
+      <div id="sifreHata" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none;">❌ Şifre hatalı</div>
+      <button id="sifreGirisBtn" style="width:100%;background:var(--accent);color:#0b0e11;border:none;border-radius:8px;padding:10px;font-size:15px;font-weight:600;cursor:pointer;">Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- ✅ MADDE 2: Uygulamanın geri kalanı, şifre doğrulanana kadar gizli tutulur -->
+  <!-- ✅ ÖNEMLİ: display:none yerine display:flex kullanılıyor (JS'te de öyle açılır).
+       Bunun nedeni: body zaten flex-column; bu div block kalırsa header/chat-area/
+       input-area normal akışta üst üste yığılır, chat-area'nın flex:1 kuralı işe
+       yaramaz ve sohbet uzadıkça TÜM sayfa aşağı kayar, input alanı ekran dışına
+       taşar. flex + height:100% + overflow:hidden ile bu div de body gibi davranır:
+       sadece #chatArea içeride scroll olur, header ve input-area sabit kalır. -->
+  <div id="uygulamaGovdesi" style="display:none; flex-direction:column; height:100%; overflow:hidden;">
+
   <header class="header">
     <div class="header-left">
       <span class="header-logo">🧠 BP</span>
       <span class="header-version">v6</span>
     </div>
     <div class="header-status">
+      <div id="driveIslemleriDropdown" style="position:relative;display:inline-block;">
+        <button id="driveIslemleriBtn" type="button" title="YZ'ye bağlanmadan Drive üzerinde işlem yap" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🗂️ Drive İşlemleri ▼</button>
+        <div id="driveIslemleriMenu" style="display:none;position:absolute;left:0;top:110%;background:var(--surface);border:1px solid var(--border,#30363d);border-radius:8px;padding:6px;min-width:220px;z-index:150;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+          <button type="button" class="drive-islem-secenek" data-islem="dosya-sec" style="display:flex;width:100%;text-align:left;align-items:center;gap:8px;padding:8px 10px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;">📁 Dosya Seç / Ekle</button>
+          <button type="button" class="drive-islem-secenek" data-islem="yapi-denetle" style="display:flex;width:100%;text-align:left;align-items:center;gap:8px;padding:8px 10px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;">🔍 Klasör Yapısını Denetle</button>
+        </div>
+      </div>
       <button id="baglantiTestBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🔗 Bağlantı Test</button>
       <button id="konularBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📋 ARGE / ÖZEL</button>
       <button id="dashboardBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📊 Dashboard</button>
+      <button id="yzBaglanBtn" title="Yapay Zeka motorunu etkinleştir" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🤖 YZ Bağlan</button>
       <button id="acilisRaporuBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">📋 Açılış Raporu</button>
-      <button id="driveDenetleBtn" style="font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer;">🗂️ Drive Yapısını Denetle</button>
       <span class="status-dot online" id="statusDot"></span>
       <span id="statusText" style="font-size:13px; color:var(--text-muted);">Bağlantı Kuruluyor...</span>
     </div>
@@ -396,16 +444,21 @@
       <button class="etiket-btn" data-etiket="#arge">💡 #arge</button>
       <button class="etiket-btn" data-etiket="#ref">🔗 #ref</button>
       <button class="etiket-btn" data-etiket="#konu">💬 #konu</button>
-      <button class="etiket-btn" id="paralelToggleBtn" style="margin-left:auto;" title="Bu mesajı 5 YZ'ye birden gönder">🧠×5 Paralel Sor</button>
-    </div>
-
-    <div class="etiket-bar" id="yzSecimBar" style="display:none;">
-      <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Hedef YZ'ler (tık: tek seç · CTRL+tık: çoklu seç):</span>
-      <button class="etiket-btn yz-secim aktif" data-yz="gemini">Gemini</button>
-      <button class="etiket-btn yz-secim aktif" data-yz="groq">Groq</button>
-      <button class="etiket-btn yz-secim aktif" data-yz="deepseek">DeepSeek</button>
-      <button class="etiket-btn yz-secim aktif" data-yz="openrouter">OpenRouter</button>
-      <button class="etiket-btn yz-secim aktif" data-yz="mistral">Mistral</button>
+      <!-- ✅ MADDE 4: paralelToggleBtn kaldırıldı, yerine akordeon/dropdown YZ seçimi geldi -->
+      <div id="yzDropdown" style="position:relative;display:inline-block;margin-left:auto;">
+        <button id="yzDropdownBtn" class="etiket-btn" type="button">🤖 5 YZ Seçili ▼</button>
+        <div id="yzDropdownMenu" style="display:none;position:absolute;right:0;top:110%;background:var(--surface);border:1px solid var(--border,#30363d);border-radius:8px;padding:8px;min-width:190px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);">
+            <input type="checkbox" id="yzHepsiniSec" checked> Hepsini Seç
+          </label>
+          <hr style="border:0;border-top:1px solid var(--border,#30363d);margin:6px 0;">
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);"><input type="checkbox" class="yz-check" data-yz="gemini" checked> Gemini 2.5 Flash</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);"><input type="checkbox" class="yz-check" data-yz="groq" checked> Groq GPT-OSS</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);"><input type="checkbox" class="yz-check" data-yz="deepseek" checked> DeepSeek Chat</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);"><input type="checkbox" class="yz-check" data-yz="openrouter" checked> OpenRouter Llama</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--text);"><input type="checkbox" class="yz-check" data-yz="mistral" checked> Mistral Small</label>
+        </div>
+      </div>
     </div>
 
     <div id="driveSeciliDosyalar" style="display:none; padding:6px 16px; flex-wrap:wrap; gap:6px; font-size:12px;"></div>
@@ -444,10 +497,12 @@
 
     <div class="input-row">
       <button id="driveSecBtn" title="Drive'dan dosya seç (yükleme değil)" style="border-radius:8px; border:1px solid var(--border,#333); background:transparent; color:var(--text-muted); cursor:pointer; padding:0 12px;">📁</button>
+      <button id="sesleYazBtn" title="Sesle yaz (konuştuğun metne dönüşür)" type="button" style="border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--accent);cursor:pointer;padding:0 12px;font-size:18px;">🎙️</button>
+      <button id="mikrofonBtn" title="Ses kaydı (Gemini telaffuz analizi — YZ bağlantısı gerekir)" type="button" style="border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--red);cursor:pointer;padding:0 12px;font-size:18px;">🔴</button>
+      <button id="sentezleBtn" type="button" style="display:none;padding:6px 12px;border-radius:8px;border:none;background:#a371f7;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;">🔄 Sentezle</button>
       <textarea id="messageInput" rows="1" placeholder="Mesajınızı yazın... (etiket seçin veya yazın)"></textarea>
-      <button class="btn-gonder" id="sendBtn">
-        <span>Gönder</span>
-        <span style="font-size:18px;">📤</span>
+      <button class="btn-gonder" id="sendBtn" disabled style="opacity:0.5;">
+        <span>YZ Bağlantısı Gerekli</span>
       </button>
     </div>
 
@@ -457,12 +512,35 @@
     </div>
   </div>
 
+  </div>
+  <!-- /uygulamaGovdesi -->
+
   <script>
+    // ============================================================
+    // ✅ MOBİL KLAVYE / SABİT GİRİŞ ÇUBUĞU DÜZELTMESİ
+    // ------------------------------------------------------------
+    // Sorun: body{height:100vh} mobilde adres çubuğu ve klavyeyi hesaba
+    // katmıyor, bu yüzden yazı yazarken input alanı ekranın dışına kayıp
+    // "kayboluyordu". Çözüm: gerçek görünür yüksekliği (visualViewport)
+    // --app-height CSS değişkenine yazıyoruz ve textarea'ya odaklanınca
+    // giriş çubuğunu görünür alana kaydırıyoruz.
+    // ============================================================
+    function appYuksekligiAyarla() {
+      const yukseklik = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', yukseklik + 'px');
+    }
+    appYuksekligiAyarla();
+    window.addEventListener('resize', appYuksekligiAyarla);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', appYuksekligiAyarla);
+      window.visualViewport.addEventListener('scroll', appYuksekligiAyarla);
+    }
+
     // ============================================================
     // KONFIGÜRASYON
     // ============================================================
     const CONFIG = {
-      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzy_kKJypVCSmwNLwdxmOq_02em4Teo98NBRm5AYXKoukUIp7LIgeuTYvE44twYPJba/exec", 
+      APP_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzt4wwLw6KcMR34DnZrUs0XyGvOit8q9s_SNuAEynFUTYBQ8Y5WJMnjaoYbDxw-Jcb6/exec", 
       ERISIM_SIFRESI: "blueprint2026",
       MAX_TUR: 8,
       COT_MODU: false,
@@ -477,12 +555,19 @@
       sohbetGecmisi: [],
       aktifEtiket: null,
       isProcessing: false,
-      paralelModAcik: false,
       seciliYzler: ['gemini', 'groq', 'deepseek', 'openrouter', 'mistral'],
       driveSeciliDosyalar: [],
       driveGezinmeYigin: [null],
       aktifKonuId: null,
-      mesajNo: 0, 
+      mesajNo: 0,
+      // ✅ MADDE 2 — Drive bağımsız, YZ motoru manuel bağlanana kadar kapalı
+      aiEngineAktif: false,
+      // ✅ MADDE 3 — Dashboard proje seçimi
+      aktifProjeId: null,
+      projeSecimGerekli: false,
+      // ✅ MADDE 5 — seçilen/düzenlenen yanıtlar (sentezleme için)
+      seciliYanitlar: [],
+      mesajUidSayaci: 0,
     };
 
     // ============================================================
@@ -496,8 +581,11 @@
     const counterDisplay = document.getElementById('counterDisplay');
     const oturumDisplay = document.getElementById('oturumDisplay');
     const etiketBar = document.getElementById('etiketBar');
-    const paralelToggleBtn = document.getElementById('paralelToggleBtn');
-    const yzSecimBar = document.getElementById('yzSecimBar');
+    const yzDropdownBtn = document.getElementById('yzDropdownBtn');
+    const yzDropdownMenu = document.getElementById('yzDropdownMenu');
+    const sentezleBtn = document.getElementById('sentezleBtn');
+    const mikrofonBtn = document.getElementById('mikrofonBtn');
+    const yzBaglanBtn = document.getElementById('yzBaglanBtn');
     const driveSecBtn = document.getElementById('driveSecBtn');
     const drivePanel = document.getElementById('drivePanel');
     const drivePanelIcerik = document.getElementById('drivePanelIcerik');
@@ -619,6 +707,12 @@
         dosyaHtml = '<span class="etiket" style="background:rgba(59,130,246,0.15);color:#93c5fd;">📎 ' + meta.driveDosyalari.join(', ') + '</span>';
       }
 
+      // ✅ MADDE 6 — imla düzeltme rozeti
+      let imlaHtml = '';
+      if (meta.imlaDuzeltilmis) {
+        imlaHtml = '<span class="etiket" style="background:rgba(59,130,246,0.15);color:#93c5fd;">✏️ İmla Düzeltildi</span>';
+      }
+
       let numaraEtiketi = '';
       if (meta.mesajNo) {
         numaraEtiketi = (rol === 'user' ? 'Soru #' : 'Cevap #') + meta.mesajNo;
@@ -626,9 +720,30 @@
 
       const icerikGuvenli = escapeHtml(icerik).replace(/\n/g, '<br>');
 
+      // ✅ MADDE 5 — her yz balonu: Seç / Sil / Düzenle
+      // ✅ MADDE 10 — her yz balonu: 🔊 Dinle
+      state.mesajUidSayaci++;
+      const mesajUid = 'M' + state.mesajUidSayaci;
+      let manipulasyonHtml = '';
+      if (rol === 'yz') {
+        const dinleBtnHtml = ('speechSynthesis' in window)
+          ? '<button class="yz-dinle-btn" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;">🔊 Dinle</button>'
+          : '';
+        manipulasyonHtml = `
+          <div style="display:flex;gap:10px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border,#30363d);flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--text-muted);">
+              <input type="checkbox" class="yz-sec-check" data-msg-id="${mesajUid}" style="cursor:pointer;"> Seç
+            </label>
+            <button class="yz-sil-btn" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;">🗑️ Sil</button>
+            <button class="yz-duzenle-btn" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;">✏️ Düzenle</button>
+            ${dinleBtnHtml}
+          </div>
+        `;
+      }
+
       div.innerHTML = `
         ${yzBadgeHtml}
-        <div>${icerikGuvenli}</div>
+        <div class="mesaj-icerik">${icerikGuvenli}</div>
         <div class="meta">
           <span>${rol === 'user' ? '🧑 Sen' : (meta.yz_adi || '🤖 Asistan')}</span>
           ${numaraEtiketi ? '<span>•</span><span>' + numaraEtiketi + '</span>' : ''}
@@ -637,8 +752,10 @@
           ${etiketHtml ? '• ' + etiketHtml : ''}
           ${ozelHtml ? '• ' + ozelHtml : ''}
           ${dosyaHtml ? '• ' + dosyaHtml : ''}
+          ${imlaHtml ? '• ' + imlaHtml : ''}
         </div>
         ${onayHtml}
+        ${manipulasyonHtml}
       `;
 
       div.querySelectorAll('.btn-onay').forEach(function(btn) {
@@ -658,6 +775,82 @@
           }
         });
       });
+
+      // ✅ MADDE 5 — Seç / Sil / Düzenle olay dinleyicileri
+      if (rol === 'yz') {
+        const secCheck = div.querySelector('.yz-sec-check');
+        if (secCheck) {
+          secCheck.addEventListener('change', function() {
+            const msgId = this.dataset.msgId;
+            const icerikMetni = div.querySelector('.mesaj-icerik').textContent;
+            if (this.checked) {
+              state.seciliYanitlar.push({ id: msgId, icerik: icerikMetni, duzenlenmis: icerikMetni });
+            } else {
+              state.seciliYanitlar = state.seciliYanitlar.filter(function(y) { return y.id !== msgId; });
+            }
+            sentezButonuGuncelle();
+          });
+        }
+
+        const silBtn = div.querySelector('.yz-sil-btn');
+        if (silBtn) {
+          silBtn.addEventListener('click', function() {
+            div.remove();
+            state.seciliYanitlar = state.seciliYanitlar.filter(function(y) { return y.id !== mesajUid; });
+            sentezButonuGuncelle();
+          });
+        }
+
+        const duzenleBtn = div.querySelector('.yz-duzenle-btn');
+        if (duzenleBtn) {
+          duzenleBtn.addEventListener('click', function() {
+            const icerikDiv = div.querySelector('.mesaj-icerik');
+            const textarea = document.createElement('textarea');
+            textarea.value = icerikDiv.textContent;
+            textarea.style.cssText = 'width:100%;background:var(--surface2);border:1px solid var(--border,#30363d);border-radius:6px;padding:8px;color:var(--text);font-family:inherit;font-size:14px;min-height:60px;box-sizing:border-box;';
+            icerikDiv.replaceWith(textarea);
+            duzenleBtn.style.display = 'none';
+
+            const kaydetBtn = document.createElement('button');
+            kaydetBtn.textContent = '💾 Kaydet';
+            kaydetBtn.style.cssText = 'margin-top:6px;padding:4px 12px;background:var(--green);color:#0b0e11;border:none;border-radius:6px;font-size:12px;cursor:pointer;';
+            kaydetBtn.addEventListener('click', function() {
+              const yeniDiv = document.createElement('div');
+              yeniDiv.className = 'mesaj-icerik';
+              yeniDiv.textContent = textarea.value;
+              textarea.replaceWith(yeniDiv);
+              kaydetBtn.remove();
+              duzenleBtn.style.display = '';
+              const y = state.seciliYanitlar.find(function(item) { return item.id === mesajUid; });
+              if (y) y.duzenlenmis = textarea.value;
+            });
+            div.insertBefore(kaydetBtn, div.querySelector('.meta'));
+          });
+        }
+
+        const dinleBtn = div.querySelector('.yz-dinle-btn');
+        if (dinleBtn) {
+          dinleBtn.addEventListener('click', function() {
+            const metin = div.querySelector('.mesaj-icerik').textContent;
+            const utterance = new SpeechSynthesisUtterance(metin);
+            if (/[çğıöşüÇĞİÖŞÜ]/.test(metin)) {
+              utterance.lang = 'tr-TR';
+            } else if (/[a-zA-Z]{3,}/.test(metin)) {
+              utterance.lang = 'en-US';
+            } else {
+              utterance.lang = 'tr-TR';
+            }
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            dinleBtn.textContent = '🔊 Dinleniyor...';
+            utterance.onend = function() { dinleBtn.textContent = '🔊 Dinle'; };
+            utterance.onerror = function() { dinleBtn.textContent = '❌ Hata'; };
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+          });
+        }
+      }
 
       chatArea.appendChild(div);
       chatArea.scrollTop = chatArea.scrollHeight;
@@ -784,7 +977,7 @@
     // ============================================================
     // DASHBOARD
     // ============================================================
-    function dashboardGuncelle() {
+    async function dashboardGuncelle() {
       const icerik = document.getElementById('dashboardIcerik');
       const acikArge = (state._sonBaglam && state._sonBaglam.acik_arge) || [];
       const acikSorun = (state._sonBaglam && state._sonBaglam.acik_sorunlar) || [];
@@ -798,7 +991,43 @@
       const sorular = state.sohbetGecmisi.filter(function(m) { return m.role === 'user'; }).length;
       const cevaplar = state.sohbetGecmisi.filter(function(m) { return m.role === 'assistant'; }).length;
 
-      let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
+      // ✅ MADDE 3 — PROJE SEÇİMİ (açıklamalı kart listesi + yeni proje oluşturma)
+      let projeHtml = '';
+      try {
+        const projeSonuc = await appScriptIstek('projeleri_listele');
+        if (projeSonuc.basarili && projeSonuc.projeler && Object.keys(projeSonuc.projeler).length > 0) {
+          state.projeSecimGerekli = true;
+          if (projeSonuc.aktifProjeId) state.aktifProjeId = projeSonuc.aktifProjeId;
+          const kartlar = Object.keys(projeSonuc.projeler).map(function(ad) {
+            const kayit = projeSonuc.projeler[ad];
+            // Geriye dönük uyumluluk: kayıt ya düz string (sadece klasör ID'si)
+            // ya da {id, aciklama} objesi olabilir.
+            const id = (typeof kayit === 'string') ? kayit : kayit.id;
+            const aciklama = (typeof kayit === 'string') ? '' : (kayit.aciklama || '');
+            const aktifMi = (id === state.aktifProjeId);
+            return '<div class="proje-karti" data-proje-id="' + id + '" style="padding:10px 12px;margin-bottom:6px;border-radius:8px;cursor:pointer;border:1px solid ' + (aktifMi ? '#58a6ff' : '#30363d') + ';background:' + (aktifMi ? 'rgba(88,166,255,0.08)' : '#0b0e11') + ';">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+                '<strong style="font-size:13px;">' + (aktifMi ? '✅ ' : '📁 ') + escapeHtml(ad) + '</strong>' +
+                (aktifMi ? '<span style="font-size:10px;color:#58a6ff;">AKTİF</span>' : '') +
+              '</div>' +
+              (aciklama ? '<div style="font-size:11px;color:#8b949e;margin-top:3px;">' + escapeHtml(aciklama) + '</div>' : '') +
+            '</div>';
+          }).join('');
+          projeHtml = '<div style="margin-bottom:12px;">' +
+            '<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">📂 Proje Seç (YZ\'ye bağlanmadan önce şart)</div>' +
+            '<div id="projeKartListesi">' + kartlar + '</div>' +
+            '<button id="yeniProjeOlusturBtn" type="button" style="width:100%;margin-top:6px;padding:8px;border-radius:7px;border:1px dashed #30363d;background:transparent;color:#8b949e;cursor:pointer;font-size:12px;">➕ Yeni Proje Oluştur</button>' +
+            '</div>';
+        } else {
+          // PROJE_LISTESI tanımlı değil — eski tek-proje davranışına devam (geriye dönük uyumluluk)
+          state.projeSecimGerekli = false;
+        }
+      } catch (e) {
+        projeHtml = '<div style="margin-bottom:12px;color:#f85149;font-size:12px;">⚠️ Proje listesi alınamadı: ' + e.message + '</div>';
+      }
+
+      let html = projeHtml;
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
       html += '<div style="background:#0b0e11;border:1px solid #30363d;border-radius:8px;padding:10px;">';
       html += '<div style="font-size:11px;color:#8b949e;">Soru / Cevap</div>';
       html += '<div style="font-size:20px;font-weight:700;">' + sorular + ' / ' + cevaplar + '</div></div>';
@@ -833,13 +1062,69 @@
     }
 
     const dashboardModal = document.getElementById('dashboardModal');
-    document.getElementById('dashboardBtn').addEventListener('click', function() {
-      dashboardGuncelle();
+    document.getElementById('dashboardBtn').addEventListener('click', async function() {
+      await dashboardGuncelle();
       dashboardModal.style.display = 'flex';
+      dashboardProjeEtkilesimBagla();
     });
     document.getElementById('dashboardKapatBtn').addEventListener('click', function() {
       dashboardModal.style.display = 'none';
     });
+
+    // Proje kartlarına ve "Yeni Proje Oluştur" butonuna tıklama olaylarını bağlar.
+    // dashboardGuncelle() içeriği her yenilediğinde DOM elemanları yeniden
+    // oluştuğu için bu fonksiyon dashboardGuncelle() sonrası her seferinde çağrılmalı.
+    function dashboardProjeEtkilesimBagla() {
+      document.querySelectorAll('.proje-karti').forEach(function(kart) {
+        kart.addEventListener('click', async function() {
+          const secilenId = this.dataset.projeId;
+          if (!secilenId || secilenId === state.aktifProjeId) return;
+          try {
+            const sonuc = await appScriptIstek('proje_sec', { projeId: secilenId });
+            if (sonuc.basarili) {
+              state.aktifProjeId = secilenId;
+              sistemMesaji('📂 Proje seçildi. Artık "🤖 YZ Bağlan" ile bağlanabilirsin.');
+              await dashboardGuncelle();
+              dashboardProjeEtkilesimBagla();
+            } else {
+              sistemMesaji('❌ Proje seçilemedi: ' + (sonuc.hata || 'bilinmeyen hata'));
+            }
+          } catch (err) {
+            sistemMesaji('❌ Proje seçim isteği başarısız: ' + err.message);
+          }
+        });
+      });
+
+      const yeniBtn = document.getElementById('yeniProjeOlusturBtn');
+      if (yeniBtn) {
+        yeniBtn.addEventListener('click', async function() {
+          const ad = await modalSor('Yeni Proje Adı', 'Örn: "Mobil Uygulama v2"', '');
+          if (ad === null || !ad.trim()) return;
+          const aciklama = await modalSor('Kısa Açıklama', 'Bu proje ne hakkında? (opsiyonel, listede görünecek)', '');
+          if (aciklama === null) return;
+          yeniBtn.disabled = true;
+          yeniBtn.textContent = '🔄 Oluşturuluyor...';
+          try {
+            const sonuc = await appScriptIstek('proje_olustur', { ad: ad.trim(), aciklama: aciklama.trim() });
+            if (sonuc.basarili) {
+              state.aktifProjeId = sonuc.aktifProjeId;
+              sistemMesaji('✅ "' + ad.trim() + '" projesi oluşturuldu ve aktif proje yapıldı.');
+              await dashboardGuncelle();
+              dashboardProjeEtkilesimBagla();
+            } else {
+              sistemMesaji('❌ Proje oluşturulamadı: ' + (sonuc.hata || 'bilinmeyen hata'));
+            }
+          } catch (err) {
+            sistemMesaji('❌ Proje oluşturma isteği başarısız: ' + err.message);
+          } finally {
+            if (document.body.contains(yeniBtn)) {
+              yeniBtn.disabled = false;
+              yeniBtn.textContent = '➕ Yeni Proje Oluştur';
+            }
+          }
+        });
+      }
+    }
 
     // ============================================================
     // BAĞLANTI TESTİ
@@ -864,11 +1149,37 @@
     });
 
     // ============================================================
+    // ✅ DRIVE İŞLEMLERİ (tek buton, YZ'ye bağlanmadan çalışır)
+    // ============================================================
+    const driveIslemleriBtn = document.getElementById('driveIslemleriBtn');
+    const driveIslemleriMenu = document.getElementById('driveIslemleriMenu');
+    driveIslemleriBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      driveIslemleriMenu.style.display = driveIslemleriMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function() {
+      driveIslemleriMenu.style.display = 'none';
+    });
+    document.querySelectorAll('.drive-islem-secenek').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        driveIslemleriMenu.style.display = 'none';
+        const islem = this.dataset.islem;
+        if (islem === 'dosya-sec') {
+          driveSecBtn.click();
+        } else if (islem === 'yapi-denetle') {
+          driveDenetleBtn.click();
+        }
+      });
+    });
+
+    // ============================================================
     // DRIVE YAPISI DENETİMİ
     // ============================================================
     const driveDenetlePanel = document.getElementById('driveDenetlePanel');
     const driveDenetleIcerik = document.getElementById('driveDenetleIcerik');
-    document.getElementById('driveDenetleBtn').addEventListener('click', async function() {
+    const driveDenetleBtn = document.createElement('button');
+    driveDenetleBtn.addEventListener('click', async function() {
       driveDenetlePanel.style.display = 'flex';
       driveDenetleIcerik.innerHTML = '🔄 Denetleniyor...';
       try {
@@ -1176,10 +1487,17 @@
     async function mesajGonder() {
       if (state.isProcessing) return;
 
+      // ✅ MADDE 2 — YZ motoru manuel bağlanmadan mesaj gönderilemez
+      if (!state.aiEngineAktif) {
+        sistemMesaji('⚠️ Önce sağ üstten "🤖 YZ Bağlan" ile Yapay Zeka motorunu etkinleştirmelisin.');
+        return;
+      }
+
       const metin = messageInput.value.trim();
       if (!metin) return;
 
-      if (state.paralelModAcik) {
+      // ✅ MADDE 4 — Birden fazla YZ seçiliyse otomatik olarak paralel sorgu yapılır
+      if (state.seciliYzler.length > 1) {
         return paralelSorGonder(metin);
       }
 
@@ -1251,6 +1569,18 @@
           state.aktifKonuId = sonuc.aktif_konu_id; 
         }
 
+        // ✅ MADDE 3 — #çık ile projeden de çıkıldıysa, YZ motorunu tekrar kapat
+        // ve kullanıcıyı proje seçim ekranına (Dashboard) yönlendir.
+        if (sonuc.proje_cikis) {
+          state.aktifProjeId = null;
+          state.aiEngineAktif = false;
+          yzBaglanBtn.style.display = '';
+          sendBtn.disabled = true;
+          sendBtn.style.opacity = '0.5';
+          sendBtn.innerHTML = '<span>YZ Bağlantısı Gerekli</span>';
+          sistemMesaji('📂 Yeni proje seçmek için 📊 Dashboard\'u aç.');
+        }
+
         if (sonuc.turSayaci !== undefined) {
           state.turSayaci = sonuc.turSayaci;
           updateCounter(state.turSayaci);
@@ -1276,6 +1606,7 @@
             yz_kodu: sonuc.yz_kodu || 'otomatik',
             yz_otomatik_gecis: otomatikGecis,
             mesajNo: buTurNumarasi,
+            imlaDuzeltilmis: !!sonuc.imla_duzeltilmis,
           });
           if (!sonuc.kayit_yapilmadi) {
             state.sohbetGecmisi.push({ role: 'assistant', content: sonuc.yz_cevabi });
@@ -1316,8 +1647,8 @@
       } finally {
         state.isProcessing = false;
         sendBtn.disabled = false;
-        sendBtn.innerHTML = state.paralelModAcik
-          ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>'
+        sendBtn.innerHTML = state.seciliYzler.length > 1
+          ? '<span>' + state.seciliYzler.length + ' YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>'
           : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
         messageInput.focus();
       }
@@ -1437,12 +1768,154 @@
     }
 
     // ============================================================
+    // ✅ SESLE YAZ — anlık konuşmayı metne çevirip yazı kutusuna yazar
+    // (Gemini'nin ses analizinden farklı: internet/tarayıcı üzerinden
+    // gerçek zamanlı konuşma-metin dönüşümü, YZ bağlantısı GEREKTİRMEZ.)
+    // ------------------------------------------------------------
+    // ÖNEMLİ KISIT: Bu sayfa Google Apps Script'in kendi "sandbox" iframe'i
+    // içinde çalışıyor. Mikrofon izni tarayıcı ayarlarından verilmiş olsa
+    // bile, Apps Script'in dış iframe'i mikrofon iznini bazen sayfaya
+    // geçirmiyor ve "Permission denied" hatası veriyor. Bunun çözümü kodla
+    // değil — web uygulamasını Google Sites/iframe içine gömmek yerine
+    // doğrudan kendi "…/exec" bağlantısından, tarayıcıda AYRI BİR SEKMEDE
+    // açmaktır. Aşağıdaki kod, izin reddedilirse bunu açıkça söyler.
+    // ============================================================
+    const SesTaniyici = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const sesleYazBtn = document.getElementById('sesleYazBtn');
+    let sesTanimaAktif = false;
+    let sesTanimaNesnesi = null;
+
+    if (!SesTaniyici) {
+      sesleYazBtn.title = 'Bu tarayıcı sesle yazmayı desteklemiyor (Chrome/Edge önerilir)';
+      sesleYazBtn.style.opacity = '0.4';
+    }
+
+    sesleYazBtn.addEventListener('click', function() {
+      if (!SesTaniyici) {
+        sistemMesaji('❌ Bu tarayıcı sesle yazmayı desteklemiyor. Chrome veya Edge kullanmayı dene.');
+        return;
+      }
+
+      if (sesTanimaAktif) {
+        sesTanimaNesnesi.stop();
+        return;
+      }
+
+      sesTanimaNesnesi = new SesTaniyici();
+      sesTanimaNesnesi.lang = 'tr-TR';
+      sesTanimaNesnesi.continuous = true;
+      sesTanimaNesnesi.interimResults = true;
+
+      const baslangicMetni = messageInput.value ? messageInput.value.trim() + ' ' : '';
+
+      sesTanimaNesnesi.onstart = function() {
+        sesTanimaAktif = true;
+        sesleYazBtn.textContent = '⏹️';
+        sesleYazBtn.style.color = 'var(--green)';
+        sistemMesaji('🎙️ Dinliyorum... (durdurmak için tekrar bas)');
+      };
+
+      sesTanimaNesnesi.onresult = function(e) {
+        let metin = '';
+        for (let i = 0; i < e.results.length; i++) {
+          metin += e.results[i][0].transcript;
+        }
+        messageInput.value = baslangicMetni + metin;
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+      };
+
+      sesTanimaNesnesi.onerror = function(e) {
+        if (e.error === 'not-allowed' || e.error === 'permission-denied' || e.error === 'service-not-allowed') {
+          sistemMesaji('❌ Mikrofon erişimi reddedildi. Kontrol et: 1) Tarayıcı adres çubuğundaki 🔒 simgesinden bu site için Mikrofon izni "İzin Ver" olmalı. 2) Bu sayfa bir iframe/Google Sites içine gömülüyse, doğrudan web uygulaması linkini (…/exec) yeni bir sekmede aç — Apps Script iframe\'i mikrofon iznini bazen engeller.');
+        } else if (e.error === 'no-speech') {
+          sistemMesaji('⚠️ Ses algılanamadı, tekrar dener misin?');
+        } else {
+          sistemMesaji('❌ Sesle yazma hatası: ' + e.error);
+        }
+      };
+
+      sesTanimaNesnesi.onend = function() {
+        sesTanimaAktif = false;
+        sesleYazBtn.textContent = '🎙️';
+        sesleYazBtn.style.color = 'var(--accent)';
+        messageInput.focus();
+      };
+
+      try {
+        sesTanimaNesnesi.start();
+      } catch (e) {
+        sistemMesaji('❌ Sesle yazma başlatılamadı: ' + e.message);
+      }
+    });
+
+    // ============================================================
+    // ✅ MADDE 9 — MULTIMODAL SESLİ GİRDİ (Mikrofon — Gemini telaffuz analizi)
+    // ============================================================
+    let mediaRecorder = null;
+    let sesChunks = [];
+
+    mikrofonBtn.addEventListener('click', async function() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        mikrofonBtn.textContent = '🔴';
+        mikrofonBtn.style.color = 'var(--red)';
+        return;
+      }
+
+      if (!state.aiEngineAktif) {
+        sistemMesaji('⚠️ Ses analizi için önce "🤖 YZ Bağlan" ile bağlanmalısın.');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        sesChunks = [];
+
+        mediaRecorder.ondataavailable = function(e) { sesChunks.push(e.data); };
+
+        mediaRecorder.onstop = function() {
+          stream.getTracks().forEach(function(t) { t.stop(); });
+          const sesBlob = new Blob(sesChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.readAsDataURL(sesBlob);
+          reader.onloadend = async function() {
+            const base64Ses = reader.result.split(',')[1];
+            sistemMesaji('🎤 Ses kaydı işleniyor...');
+            try {
+              const sonuc = await appScriptIstek('ses_analiz', {
+                sesBase64: base64Ses,
+                mimeType: 'audio/webm',
+              });
+              if (sonuc.basarili) {
+                mesajEkle(sonuc.analiz, 'yz', [], { yz_adi: 'Gemini Ses Analizi', yz_kodu: 'gemini' });
+              } else {
+                sistemMesaji('❌ Ses analizi başarısız: ' + (sonuc.hata || 'bilinmeyen hata'));
+              }
+            } catch (e) {
+              sistemMesaji('❌ Ses gönderilemedi: ' + e.message);
+            }
+          };
+        };
+
+        mediaRecorder.start();
+        mikrofonBtn.textContent = '⏹️';
+        mikrofonBtn.style.color = 'var(--green)';
+        sistemMesaji('🔴 Kayıt başladı... (durdurmak için mikrofon butonuna tekrar bas)');
+      } catch (e) {
+        sistemMesaji('❌ Mikrofon erişimi reddedildi: ' + e.message + ' — Tarayıcının adres çubuğundaki 🔒 simgesinden mikrofon iznini kontrol et; sayfa bir iframe içindeyse …/exec linkini yeni sekmede aç.');
+      }
+    });
+
+    // ============================================================
     // EVENT LISTENER'LAR
     // ============================================================
     etiketBar.addEventListener('click', function(e) {
       const btn = e.target.closest('.etiket-btn');
-      if (!btn || btn === paralelToggleBtn) return;
+      if (!btn || btn === yzDropdownBtn) return;
       const etiket = btn.dataset.etiket;
+      if (!etiket) return;
 
       document.querySelectorAll('.etiket-btn[data-etiket]').forEach(function(b) { b.classList.remove('aktif'); });
       if (state.aktifEtiket === etiket) {
@@ -1458,39 +1931,89 @@
       }
     });
 
-    paralelToggleBtn.addEventListener('click', function() {
-      state.paralelModAcik = !state.paralelModAcik;
-      paralelToggleBtn.classList.toggle('aktif', state.paralelModAcik);
-      yzSecimBar.style.display = state.paralelModAcik ? 'flex' : 'none';
-      sendBtn.innerHTML = state.paralelModAcik ? '<span>5 YZ\'ye Sor</span><span style="font-size:18px;">🧠</span>' : '<span>Gönder</span><span style="font-size:18px;">📤</span>';
+    // ============================================================
+    // ✅ MADDE 4 — ÇOKLU YZ SEÇİMİ (Görünmez akordeon/dropdown)
+    // ============================================================
+    yzDropdownBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      yzDropdownMenu.style.display = yzDropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function() {
+      yzDropdownMenu.style.display = 'none';
+    });
+    yzDropdownMenu.addEventListener('click', function(e) { e.stopPropagation(); });
+
+    document.getElementById('yzHepsiniSec').addEventListener('change', function() {
+      document.querySelectorAll('.yz-check').forEach(function(cb) {
+        cb.checked = document.getElementById('yzHepsiniSec').checked;
+      });
+      yzSecimGuncelle();
+    });
+    document.querySelectorAll('.yz-check').forEach(function(cb) {
+      cb.addEventListener('change', yzSecimGuncelle);
     });
 
-    yzSecimBar.addEventListener('click', function(e) {
-      const btn = e.target.closest('.yz-secim');
-      if (!btn) return;
-      const yz = btn.dataset.yz;
+    function yzSecimGuncelle() {
+      const secili = [];
+      document.querySelectorAll('.yz-check:checked').forEach(function(cb) { secili.push(cb.dataset.yz); });
+      const hepsiCb = document.getElementById('yzHepsiniSec');
+      const tumYz = document.querySelectorAll('.yz-check').length;
+      hepsiCb.checked = secili.length === tumYz;
+      if (secili.length === 0) {
+        // En az bir YZ seçili kalmalı — ilkini geri işaretle
+        const ilk = document.querySelector('.yz-check');
+        if (ilk) { ilk.checked = true; secili.push(ilk.dataset.yz); }
+      }
+      state.seciliYzler = secili;
+      yzDropdownBtn.textContent = '🤖 ' + secili.length + ' YZ Seçili ▼';
+    }
+    yzSecimGuncelle(); // başlangıç etiketini ayarla
 
-      if (e.ctrlKey || e.metaKey) {
-        btn.classList.toggle('aktif');
-        if (btn.classList.contains('aktif')) {
-          if (!state.seciliYzler.includes(yz)) state.seciliYzler.push(yz);
+    // ============================================================
+    // ✅ MADDE 5 — SENTEZLE BUTONU
+    // ============================================================
+    function sentezButonuGuncelle() {
+      sentezleBtn.style.display = state.seciliYanitlar.length > 0 ? 'inline-block' : 'none';
+      sentezleBtn.textContent = '🔄 ' + state.seciliYanitlar.length + ' Yanıtı Sentezle';
+    }
+
+    sentezleBtn.addEventListener('click', async function() {
+      if (state.seciliYanitlar.length === 0) return;
+      const sonUserMesaji = state.sohbetGecmisi.filter(function(m) { return m.role === 'user'; }).pop();
+      const orijinalSoru = sonUserMesaji ? sonUserMesaji.content : '';
+      const seciliMetinler = state.seciliYanitlar.map(function(y) { return y.duzenlenmis || y.icerik; }).join('\n\n---\n\n');
+      const sentezPrompt = 'Orijinal Soru: ' + orijinalSoru + '\n\nSeçilen Yanıtlar:\n' + seciliMetinler + '\n\nBu yanıtları analiz et, çelişen/uzlaşan noktaları belirt, nihai bir sentez üret.';
+
+      sentezleBtn.disabled = true;
+      sentezleBtn.textContent = '🔄 Sentezleniyor...';
+      try {
+        const sonuc = await appScriptIstek('yz_sor', {
+          soru: sentezPrompt,
+          hedefYzler: state.seciliYzler.length > 0 ? state.seciliYzler : ['gemini']
+        });
+        if (sonuc.basarili && sonuc.sonuclar) {
+          sonuc.sonuclar.forEach(function(r) {
+            if (r.basarili) {
+              mesajEkle('🔄 SENTEZ:\n' + r.cevap, 'yz', [], { yz_adi: (YZ_ADLARI_HARITASI[r.yz] || r.yz) + ' Sentez', yz_kodu: r.yz });
+            }
+          });
         } else {
-          state.seciliYzler = state.seciliYzler.filter(function(y) { return y !== yz; });
+          sistemMesaji('❌ Sentez hatası: ' + (sonuc.hata || 'Bilinmeyen'));
         }
-      } else {
-        yzSecimBar.querySelectorAll('.yz-secim').forEach(function(b) { b.classList.remove('aktif'); });
-        btn.classList.add('aktif');
-        state.seciliYzler = [yz];
-      }
-
-      if (state.seciliYzler.length === 0) {
-        const ilkBtn = yzSecimBar.querySelector('.yz-secim');
-        if (ilkBtn) {
-          ilkBtn.classList.add('aktif');
-          state.seciliYzler = [ilkBtn.dataset.yz];
-        }
+      } catch (err) {
+        sistemMesaji('❌ Sentez isteği gönderilemedi: ' + err.message);
+      } finally {
+        sentezButonuGuncelle();
       }
     });
+
+    const YZ_ADLARI_HARITASI = {
+      'gemini': 'Gemini 2.5 Flash',
+      'groq': 'Groq GPT-OSS',
+      'deepseek': 'DeepSeek Chat',
+      'openrouter': 'OpenRouter Llama',
+      'mistral': 'Mistral Small'
+    };
 
     sendBtn.addEventListener('click', mesajGonder);
 
@@ -1506,6 +2029,15 @@
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
 
+    // Mobilde klavye açılınca giriş çubuğunun görünür kalmasını garanti eder
+    messageInput.addEventListener('focus', function() {
+      setTimeout(function() {
+        appYuksekligiAyarla();
+        messageInput.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }, 250);
+    });
+
     // ============================================================
     // BAŞLAT
     // ============================================================
@@ -1516,16 +2048,137 @@
         return;
       }
 
-      await oturumBaslat();
+      // ✅ MADDE 2 — Sayfa açılır açılmaz oturum/YZ bağlantısı KURULMAZ.
+      // Sadece Drive tabanlı işlemler (dosya seç / drive denetle) hazır durumda bekler.
+      // Kullanıcı "🤖 YZ Bağlan"a basınca oturumBaslat() burada değil, o tıklamada çağrılır.
+      setStatus(true, 'Drive hazır — YZ bağlantısı bekleniyor');
+      sistemMesaji('👋 Hoş geldin! Drive araçlarını (🗂️ Drive İşlemleri) YZ olmadan da kullanabilirsin.');
 
-      setTimeout(function() {
-        if (chatArea.children.length === 0) {
-          sistemMesaji('👋 Hoş geldin! Blueprint geliştirme asistanı aktif. Bir şeyler yazmaya başla.');
-        }
-      }, 500);
+      // ✅ MADDE 3 — Proje listesi tanımlıysa, YZ'ye bağlanmadan ÖNCE proje
+      // seçtirmek için Dashboard'u otomatik açıyoruz.
+      await dashboardGuncelle();
+      dashboardProjeEtkilesimBagla();
+      if (state.projeSecimGerekli && !state.aktifProjeId) {
+        dashboardModal.style.display = 'flex';
+        sistemMesaji('📂 Devam etmeden önce bir proje seç ya da "➕ Yeni Proje Oluştur" ile yeni bir tane aç.');
+      } else if (state.projeSecimGerekli && state.aktifProjeId) {
+        sistemMesaji('📂 Aktif proje hazır. Sohbet etmek için sağ üstten "🤖 YZ Bağlan"a bas.');
+      } else {
+        sistemMesaji('Sohbet etmek için sağ üstten "🤖 YZ Bağlan"a bas.');
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    // ============================================================
+    // ✅ MADDE 1 — ŞİFRE MODAL'I MANTIĞI
+    // ============================================================
+    const sifreModal = document.getElementById('sifreModal');
+    const uygulamaGovdesi = document.getElementById('uygulamaGovdesi');
+    const sifreInput = document.getElementById('sifreInput');
+    const sifreHata = document.getElementById('sifreHata');
+    const sifreGirisBtn = document.getElementById('sifreGirisBtn');
+
+    // ============================================================
+    // ✅ MİKROFON İZNİNİ EN ERKEN NOKTADA OTOMATİK İSTE
+    // ------------------------------------------------------------
+    // ÖNEMLİ GERÇEK: Hiçbir web sitesi (Google dahil) tarayıcının izin
+    // penceresini kullanıcı hiç etkileşime girmeden veya "sessizce" 
+    // gösteremez — bu tarayıcıların kasıtlı güvenlik kısıtıdır, kod ile
+    // atlanamaz. Yapabildiğimiz en iyi şey: izni EN ERKEN mümkün anda,
+    // yani "Giriş Yap" butonuna basılır basılmaz, kullanıcı ayrı bir
+    // "mikrofon iznini ver" butonuna tıklamak zorunda kalmadan istemek.
+    // ============================================================
+    async function mikrofonIzniIste() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        sistemMesaji('⚠️ Bu tarayıcı mikrofon erişimini desteklemiyor.');
+        return;
+      }
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          try {
+            const durum = await navigator.permissions.query({ name: 'microphone' });
+            if (durum.state === 'denied') {
+              sistemMesaji('🚫 Mikrofon bu site için tarayıcı ayarlarından KALICI OLARAK engellenmiş. Adres çubuğundaki 🔒 simgesine tıkla → Site ayarları → Mikrofon → "İzin Ver" yap, sonra sayfayı yenile.');
+              return;
+            }
+          } catch (e) { /* bazı tarayıcılar 'microphone' permissions sorgusunu desteklemez, sorun değil */ }
+        }
+
+        const akis = await navigator.mediaDevices.getUserMedia({ audio: true });
+        akis.getTracks().forEach(function(t) { t.stop(); }); // sadece izni tetiklemek için açıp hemen kapatıyoruz
+        sistemMesaji('✅ Mikrofon izni verildi. 🎙️ Sesle Yaz ve 🔴 Ses Kaydı butonları artık hazır.');
+      } catch (e) {
+        if (e.name === 'NotAllowedError') {
+          sistemMesaji('❌ Mikrofon izni reddedildi. Adres çubuğundaki 🔒 simgesinden bu site için Mikrofon iznini "İzin Ver" yapıp sayfayı yenile.');
+        } else if (e.name === 'NotFoundError') {
+          sistemMesaji('❌ Bu cihazda/bilgisayarda mikrofon bulunamadı ya da başka bir uygulama tarafından kullanılıyor.');
+        } else if (e.name === 'SecurityError' || e.name === 'NotSupportedError') {
+          sistemMesaji('❌ Mikrofon, bu sayfanın çalıştığı Google Apps Script "iframe"i tarafından engelleniyor. Bu bizim kodumuzla düzeltemediğimiz bir Google kısıtı — çözüm: bu web uygulamasının ".../exec" linkini herhangi bir siteye/Google Sites\'e GÖMMEDEN, doğrudan yeni bir Chrome sekmesine yapıştırıp öyle aç.');
+        } else {
+          sistemMesaji('❌ Mikrofon izni alınamadı (' + e.name + '): ' + e.message);
+        }
+      }
+    }
+
+    async function sifreGirisiDene() {
+      const girilenSifre = sifreInput.value.trim();
+      if (!girilenSifre) return;
+      sifreHata.style.display = 'none';
+      sifreGirisBtn.disabled = true;
+      sifreGirisBtn.textContent = '🔄 Kontrol ediliyor...';
+      try {
+        const sonuc = await new Promise(function(resolve, reject) {
+          google.script.run
+            .withSuccessHandler(function(jsonStr) {
+              try { resolve(JSON.parse(jsonStr)); }
+              catch (e) { reject(new Error('Sunucu geçersiz JSON döndürdü.')); }
+            })
+            .withFailureHandler(function(hata) { reject(new Error(hata.message || String(hata))); })
+            .htmlKoprusu(JSON.stringify({ tip: 'sifre_kontrol', sifre: girilenSifre }));
+        });
+
+        if (sonuc.basarili && sonuc.onayli) {
+          CONFIG.ERISIM_SIFRESI = girilenSifre; // doğrulanan şifre config'e yazılır
+          sifreModal.style.display = 'none';
+          uygulamaGovdesi.style.display = 'flex';
+          mikrofonIzniIste(); // ✅ ayrı bir "izin ver" butonuna gerek kalmadan otomatik iste
+          init();
+        } else {
+          sifreHata.textContent = '❌ Şifre hatalı';
+          sifreHata.style.display = 'block';
+        }
+      } catch (e) {
+        sifreHata.textContent = '❌ Bağlantı hatası: ' + e.message;
+        sifreHata.style.display = 'block';
+      } finally {
+        sifreGirisBtn.disabled = false;
+        sifreGirisBtn.textContent = 'Giriş Yap';
+      }
+    }
+
+    sifreGirisBtn.addEventListener('click', sifreGirisiDene);
+    sifreInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') sifreGirisiDene();
+    });
+    sifreInput.focus();
+
+    // ============================================================
+    // ✅ MADDE 2 — YZ BAĞLAN BUTONU
+    // ============================================================
+    yzBaglanBtn.addEventListener('click', async function() {
+      // ✅ MADDE 3 — proje listesi tanımlıysa, YZ'ye bağlanmadan önce proje seçilmiş olmalı
+      if (state.projeSecimGerekli && !state.aktifProjeId) {
+        sistemMesaji('⚠️ Önce 📊 Dashboard üzerinden bir proje seçmelisin.');
+        return;
+      }
+      state.aiEngineAktif = true;
+      yzBaglanBtn.style.display = 'none';
+      setStatus(true, 'YZ Bağlı');
+      sistemMesaji('🤖 Yapay Zeka motoru aktifleştirildi.');
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = '1';
+      sendBtn.innerHTML = '<span>Gönder</span><span style="font-size:18px;">📤</span>';
+      await oturumBaslat();
+    });
   </script>
 </body>
 </html>
